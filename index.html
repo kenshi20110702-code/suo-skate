@@ -1,0 +1,2042 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="すおのトリプルヒールフリップstory は、ブラウザで遊べる無料の3Dスケボーゲーム。キックフリップやグラインド、マニュアルをつないでコンボを決めよう。部屋コードで友達と最大4人のオンラインにも対応。キーボードとPS5コントローラーで遊べます。">
+<link rel="canonical" href="https://kenshi20110702-code.github.io/suo-skate/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kenshi20110702-code.github.io/suo-skate/">
+<meta property="og:title" content="すおのトリプルヒールフリップstory">
+<meta property="og:description" content="ブラウザで遊べる無料の3Dスケボーゲーム。友達と最大4人でオンラインでも滑れる。">
+<meta name="twitter:card" content="summary">
+<!-- Google Search Console の確認タグはここに入れる -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"すおのトリプルヒールフリップstory","description":"ブラウザで遊べる無料の3Dスケボーゲーム。トリックやグラインドをつないでコンボを決めよう。友達と最大4人でオンラインでも滑れる。","genre":["スポーツ","スケートボード"],"inLanguage":"ja","gamePlatform":"Web ブラウザ","playMode":["SinglePlayer","MultiPlayer"],"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"}}
+</script>
+<title>すおのトリプルヒールフリップstory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+/* Layout: full-bleed 3D park, arcade HUD pinned to the corners, combo meter bottom-center */
+:root{
+  --bg:#140f24;
+  --ink:#fff4e6;
+  --sun:#ffb12e;
+  --hot:#ff5470;
+  --teal:#56e0cf;
+  --panel:rgba(20,14,36,.66);
+  --line:rgba(255,244,230,.18);
+  --display:'Dela Gothic One','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;
+  --body:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',system-ui,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body)}
+#game{position:fixed;inset:0}
+#game canvas{display:block;width:100%;height:100%}
+.hud{position:fixed;pointer-events:none;z-index:2}
+#scoreBox{top:calc(14px + env(safe-area-inset-top,0px));left:16px;display:grid;gap:2px}
+.lab{font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.75;font-weight:700}
+#score{font-family:var(--display);font-size:clamp(26px,4vw,40px);line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 3px 0 rgba(0,0,0,.35)}
+#best{font-size:13px;font-variant-numeric:tabular-nums;opacity:.85}
+#speedBox{top:calc(14px + env(safe-area-inset-top,0px));right:16px;text-align:right}
+#speed{font-family:var(--display);font-size:clamp(22px,3vw,32px);line-height:1;font-variant-numeric:tabular-nums}
+#speed small{font-family:var(--body);font-size:12px;opacity:.7;margin-left:4px}
+#comboBox{left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom,0px));text-align:center;width:min(92vw,720px);display:grid;gap:6px;justify-items:center}
+#comboNames{font-family:var(--display);font-size:clamp(14px,2vw,19px);line-height:1.35;text-wrap:balance;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+#comboPts{font-family:var(--display);font-size:clamp(20px,3vw,28px);color:var(--sun);font-variant-numeric:tabular-nums;text-shadow:0 3px 0 rgba(0,0,0,.4)}
+#comboPts b{color:var(--teal);font-weight:400}
+#popup{left:50%;top:30%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(30px,6vw,64px);white-space:nowrap;color:var(--ink);text-shadow:0 4px 0 var(--hot),0 8px 18px rgba(0,0,0,.4);opacity:0}
+#popup.show{animation:pop .9s ease-out forwards}
+#popup.long{font-size:clamp(20px,4.4vw,44px)}
+#popup.good{text-shadow:0 4px 0 #1f8f80,0 8px 18px rgba(0,0,0,.4);color:var(--sun)}
+#popup.bad{color:var(--hot);text-shadow:0 4px 0 #3a0d18,0 8px 18px rgba(0,0,0,.4)}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}30%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+#sub{left:50%;top:calc(30% + 46px);transform:translateX(-50%);font-size:15px;font-weight:700;opacity:0;white-space:nowrap}
+#sub.show{animation:fade 1.4s ease-out forwards}
+@keyframes fade{0%,70%{opacity:.95}100%{opacity:0}}
+.meter{width:220px;height:12px;border-radius:6px;background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+#balance .zone{position:absolute;left:30%;right:30%;top:0;bottom:0;background:rgba(86,224,207,.22)}
+#balance .needle{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;left:50%;background:var(--sun);border-radius:2px}
+#charge .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--teal),var(--sun))}
+#help{left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.55;max-width:330px;backdrop-filter:blur(6px)}
+.hgrid{display:grid;grid-template-columns:auto 1fr;column-gap:10px}
+#padStatus{display:block;margin-top:6px;font-size:12px;font-weight:700;color:var(--teal)}
+#help .k{font-family:var(--display);font-size:11.5px;color:var(--sun);white-space:nowrap}
+#help .t{grid-column:1/-1;font-size:11px;letter-spacing:.16em;opacity:.7;font-weight:700;margin-bottom:2px}
+@media (max-width:760px){#help{display:none}}
+#start{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:16px;overflow-y:auto;background:radial-gradient(ellipse at 50% 40%,rgba(20,14,36,.35),rgba(20,14,36,.85))}
+#start .card{max-width:520px;width:100%;display:grid;gap:16px;justify-items:center;text-align:center}
+#start h1{font-family:var(--display);font-weight:400;font-size:clamp(24px,7.4vw,44px);line-height:1.15;margin:0;text-wrap:balance;color:var(--sun);text-shadow:0 5px 0 var(--hot),0 12px 30px rgba(0,0,0,.45)}
+#start h1 .story{display:inline-block;margin-top:.15em;font-size:.62em;letter-spacing:.12em;color:var(--teal);text-shadow:0 4px 0 #1b1030}
+#start p{margin:0;font-size:15px;line-height:1.7;opacity:.92}
+#start kbd{font-family:var(--display);font-size:12px;background:rgba(255,244,230,.12);border:1px solid var(--line);border-bottom-width:3px;border-radius:5px;padding:1px 6px}
+.lobby{width:100%;display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(20,14,36,.55)}
+.lrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
+.lrow label{font-weight:700;font-size:13px;letter-spacing:.1em}
+.lobby input{font:inherit;font-size:15px;color:var(--ink);background:rgba(255,244,230,.08);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;width:11em}
+#codeIn{width:7.5em;text-transform:uppercase;letter-spacing:.2em;font-family:var(--display)}
+.lobby input:focus-visible,.ghost:focus-visible,#leaveBtn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.ghost{font-family:var(--display);font-size:14px;color:var(--ink);background:transparent;border:2px solid var(--teal);border-radius:999px;padding:7px 16px;cursor:pointer}
+.ghost:hover{background:rgba(86,224,207,.15)}
+button:disabled{opacity:.45;cursor:default}
+.or{font-size:12px;opacity:.7}
+.netMsg{font-size:13px;line-height:1.6;opacity:.9;margin:0;min-height:1.6em}
+.netMsg.bad{color:var(--hot);opacity:1}
+.screen{width:100%;display:grid;gap:14px;justify-items:center}
+.modes{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.modes{grid-template-columns:1fr}}
+.mode{pointer-events:auto;display:grid;gap:6px;align-content:center;min-height:120px;padding:16px 14px;font-family:var(--body);color:#1b1030;background:var(--sun);border:0;border-radius:16px;cursor:pointer;box-shadow:0 6px 0 #b36b00;text-align:center}
+.mode.alt{background:var(--teal);box-shadow:0 6px 0 #1f8f80}
+.mode.small{min-height:96px}
+.mode:hover{filter:brightness(1.07)}
+.mode:active{transform:translateY(4px);box-shadow:0 2px 0 #b36b00}
+.mode.alt:active{box-shadow:0 2px 0 #1f8f80}
+.mode:focus-visible,.cta:focus-visible,.back:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.mode-t{font-family:var(--display);font-size:20px;line-height:1.25}
+.mode-s{font-size:12.5px;font-weight:700;opacity:.8}
+.keys{font-size:12.5px!important;opacity:.8!important}
+.cta{font-family:var(--display);font-size:18px;color:#1b1030;background:var(--sun);border:0;border-radius:999px;padding:11px 32px;cursor:pointer;box-shadow:0 5px 0 #b36b00}
+.cta:active{transform:translateY(3px);box-shadow:0 2px 0 #b36b00}
+.back{font:inherit;font-size:13px;color:var(--ink);opacity:.75;background:none;border:0;cursor:pointer;padding:4px 8px}
+.back:hover{opacity:1}
+.big-label{font-size:13px;font-weight:700;letter-spacing:.06em;opacity:.85}
+#menuJoin #codeIn{width:6.5em;font-size:30px;text-align:center;padding:8px 10px}
+.codebox{display:flex;gap:12px;align-items:center}
+#roomBig{font-family:var(--display);font-weight:400;font-size:44px;letter-spacing:.2em;color:var(--sun);user-select:all}
+.board{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:14px;min-width:200px}
+.board li{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;text-align:left}
+.board i{width:10px;height:10px;border-radius:50%}
+.board b{font-family:var(--display);font-weight:400;font-variant-numeric:tabular-nums}
+.hint{font-size:12.5px!important;opacity:.75!important}
+.claude-block{width:100%;display:grid;gap:8px;justify-items:center}
+.claude-block .mode{width:100%}
+.charpick{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;font:inherit;color:var(--ink);background:rgba(255,244,230,.08);border:2px solid var(--line);border-radius:14px;cursor:pointer}
+.charpick:hover{border-color:var(--sun)}
+.charpick:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.charpick-l{font-family:var(--display);font-size:17px}
+.charpick-now{font-size:13px;opacity:.85}
+.charpick-now b{font-family:var(--display);font-weight:400;color:var(--sun);margin-left:4px}
+#start.charmode{background:linear-gradient(to top,rgba(20,14,36,.94) 0%,rgba(20,14,36,.8) 38%,rgba(20,14,36,0) 62%);align-items:end}
+#start.charmode h1{display:none}
+#start.charmode{cursor:grab;touch-action:none}
+#start.charmode.dragging{cursor:grabbing}
+#start.charmode .card{cursor:default}
+.drag-hint{font-size:12.5px!important;opacity:.75!important}
+.chars{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:560px){.chars{grid-template-columns:repeat(2,1fr)}}
+.charcard{display:grid;gap:6px;justify-items:center;padding:12px 8px;font:inherit;color:var(--ink);background:rgba(255,244,230,.06);border:2px solid var(--line);border-radius:14px;cursor:pointer;min-width:0}
+.charcard:hover{border-color:rgba(255,177,46,.6)}
+.charcard[aria-pressed="true"]{border-color:var(--sun);background:rgba(255,177,46,.16)}
+.charcard:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.charcard .cn{font-family:var(--display);font-size:20px}
+.charcard .ct{font-size:11.5px;font-weight:700;opacity:.8;line-height:1.35}
+.sw{display:flex;gap:4px}
+.sw i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,244,230,.35)}
+.char-desc{font-size:14px!important;min-height:3.4em;max-width:36em}
+#netHud{top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:200px;pointer-events:auto;backdrop-filter:blur(6px)}
+.nethead{display:flex;gap:8px;align-items:baseline;font-size:12px}
+#roomCode{font-family:var(--display);font-size:18px;letter-spacing:.15em;color:var(--sun);user-select:all}
+#playerCount{opacity:.75}
+#leaveBtn{margin-left:auto;font:inherit;font-size:11px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer}
+#board,.board{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px;font-size:13px}
+#board li,.board li{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center}
+#board i,.board i{width:10px;height:10px;border-radius:50%}
+#board b,.board b{font-family:var(--display);font-weight:400;font-variant-numeric:tabular-nums}
+@media (max-width:760px){#netHud{top:auto;bottom:calc(100px + env(safe-area-inset-bottom,0px))}}
+@media (prefers-reduced-motion:reduce){#popup.show,#sub.show{animation-duration:.01s;opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<div class="hud" id="scoreBox">
+  <span class="lab">Score</span>
+  <span id="score">0</span>
+  <span id="best">ベストコンボ 0</span>
+</div>
+<div class="hud" id="speedBox">
+  <span class="lab">Speed</span><br>
+  <span id="speed">0<small>km/h</small></span>
+  <span id="padStatus" hidden></span>
+</div>
+<div class="hud" id="popup"></div>
+<div class="hud" id="netHud" hidden>
+  <div class="nethead"><span class="lab" id="netLabel">部屋コード</span> <b id="roomCode"></b> <span id="playerCount"></span> <button id="leaveBtn" type="button">退出</button></div>
+  <ol id="board"></ol>
+</div>
+<div class="hud" id="sub"></div>
+<div class="hud" id="comboBox">
+  <div class="meter" id="balance" hidden><div class="zone"></div><div class="needle"></div></div>
+  <div class="meter" id="charge" hidden><div class="fill"></div></div>
+  <div id="comboNames"></div>
+  <div id="comboPts"></div>
+</div>
+<div class="hud" id="help">
+ <div class="hgrid" id="helpPad" hidden>
+  <span class="t">PS5 CONTROLLER ・ OPTIONS で表示切替</span>
+  <span class="k">左スティック</span><span>曲がる ・ 空中で回転 ・ グラインドとマニュアルのバランス</span>
+  <span class="k">R2</span><span>プッシュ</span>
+  <span class="k">L2 / ○</span><span>ブレーキ</span>
+  <span class="k">✕</span><span>オーリー(長押しでタメると高く跳ぶ)</span>
+  <span class="k">右スティックをはじく</span><span>地上でも空中でも一発でトリック:← キックフリップ ・ → ヒールフリップ ・ ↑ インポッシブル ・ ↓ ショービット ・ ↙ 360フリップ ・ ↘ バリアルヒール ・ ↗ か R3 で すおの十八番トリプルヒールフリップ</span>
+  <span class="k">□ 長押し</span><span>インディーグラブ</span>
+  <span class="k">△ 長押し</span><span>マニュアル(左スティック↑↓でバランス)</span>
+  <span class="k">L1 / R1</span><span>空中でスピン</span>
+  <span class="k">左スティック ↑ / ↓ + レール</span><span>ノーズスライド / テールスライド(グラインド中に倒すと切り替え)</span>
+  <span class="k">グラインド中</span><span>✕ で飛び降り、右スティックで飛び降りながらトリック</span>
+  <span class="k">クリエイト</span><span>スタート地点に戻る</span>
+ </div>
+ <div class="hgrid" id="helpKb">
+  <span class="t">CONTROLS ・ H で表示切替</span>
+  <span class="k">W / ↑</span><span>プッシュ(加速)</span>
+  <span class="k">S / ↓</span><span>ブレーキ</span>
+  <span class="k">A D / ← →</span><span>曲がる ・ 空中で回転</span>
+  <span class="k">Space</span><span>オーリー(長押しでタメると高く跳ぶ)</span>
+  <span class="k">J K L I U Y</span><span>ボタン1つでトリック(地上なら自動で跳ぶ)</span>
+  <span class="k"></span><span>J キックフリップ ・ K ヒール ・ L ショービット ・ I 360フリップ ・ U インポッシブル ・ Y バリアルヒール</span>
+  <span class="k">T</span><span>すおの十八番トリプルヒールフリップ(331,511点)</span>
+  <span class="k">O 長押し</span><span>インディーグラブ</span>
+  <span class="k">M 長押し</span><span>マニュアル(W S でバランス)</span>
+  <span class="k">レール</span><span>近くに着地すれば自動でグラインド(A D でバランス)</span>
+  <span class="k">W / S + レール</span><span>ノーズスライド / テールスライド(グラインド中に押すと切り替え。抜けるときは板が自動で向きを戻す)</span>
+  <span class="k">R ・ V</span><span>スタート地点に戻る ・ 音のオン/オフ</span>
+  <span class="k">Esc</span><span>最初の画面に戻る</span>
+  <span class="k">PS5</span><span>コントローラーのボタンを押すと切り替わります</span>
+ </div>
+</div>
+
+<div id="start">
+  <div class="card">
+    <h1>すおの<br>トリプルヒールフリップ<br><span class="story">story</span></h1>
+
+    <!-- 1. pick a mode -->
+    <div class="screen" id="menuMain">
+      <div class="modes">
+        <button id="go" type="button" class="mode">
+          <span class="mode-t">オフラインで<br>一人で遊ぶ</span>
+          <span class="mode-s">すぐにパークで滑れます</span>
+        </button>
+        <button id="onlineBtn" type="button" class="mode alt">
+          <span class="mode-t">オンラインで<br>みんなで遊ぶ</span>
+          <span class="mode-s">部屋コードで最大4人。ログイン不要</span>
+        </button>
+      </div>
+      <p class="keys"><kbd>W</kbd> プッシュ ・ <kbd>Space</kbd> オーリー ・ <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>I</kbd><kbd>U</kbd><kbd>Y</kbd> トリック ・ <kbd>T</kbd> すおの十八番 ・ <kbd>M</kbd> マニュアル ・ PS5コントローラーはどれかのボタンでオフライン開始</p>
+      <button id="charBtn" type="button" class="charpick">
+        <span class="charpick-l">キャラクター選択</span>
+        <span class="charpick-now">いま:<b id="charNow">すお</b></span>
+      </button>
+    </div>
+
+    <!-- character select: the chosen skater spins on the board behind this panel -->
+    <div class="screen" id="menuChar" hidden>
+      <div class="chars" id="charList" role="group" aria-label="キャラクター"></div>
+      <p class="char-desc" id="charDesc"></p>
+      <p class="drag-hint">画面の上のほうをドラッグすると、キャラを360度回して見られます(← → キーでもOK)</p>
+      <button id="charOk" type="button" class="cta">このキャラで決定</button>
+      <button type="button" class="back" data-back="menuMain">← もどる</button>
+    </div>
+
+    <!-- 2. online: make a room or join one -->
+    <div class="screen lobby" id="menuOnline" hidden>
+      <div class="lrow"><label for="nameIn">あなたの名前</label><input id="nameIn" maxlength="12" placeholder="スケーター" autocomplete="off"></div>
+      <div id="claudeBlock" class="claude-block" hidden>
+        <button id="claudeJoinBtn" type="button" class="mode alt">
+          <span class="mode-t">みんなのパークに入る</span>
+          <span class="mode-s">このページを開いている人と、同じパークで滑る</span>
+        </button>
+        <p class="hint" id="claudeWho"></p>
+        <p class="hint">友達を呼ぶときは、このページ右上の「共有」から招待してください(相手はclaude.aiへのログインが必要です)。</p>
+      </div>
+      <div class="modes" id="peerModes">
+        <button id="hostBtn" type="button" class="mode small">
+          <span class="mode-t">部屋コードを作る</span>
+          <span class="mode-s">あなたがホスト。コードを友達に送る</span>
+        </button>
+        <button id="toJoinBtn" type="button" class="mode small alt">
+          <span class="mode-t">部屋コードで参加する</span>
+          <span class="mode-s">友達からもらったコードを入れる</span>
+        </button>
+      </div>
+      <p class="netMsg" id="netMsg"></p>
+      <button type="button" class="back" data-back="menuMain">← もどる</button>
+    </div>
+
+    <!-- 3. join with a code -->
+    <div class="screen lobby" id="menuJoin" hidden>
+      <label for="codeIn" class="big-label">部屋コード(5文字)</label>
+      <input id="codeIn" maxlength="5" placeholder="ABCDE" autocomplete="off" spellcheck="false">
+      <button id="joinBtn" type="button" class="cta">参加する</button>
+      <p class="netMsg" id="joinMsg"></p>
+      <button type="button" class="back" data-back="menuOnline">← もどる</button>
+    </div>
+
+    <!-- 4. host: room is ready, share the code -->
+    <div class="screen lobby" id="menuRoom" hidden>
+      <span class="big-label">部屋ができました。このコードを友達に送ってね</span>
+      <div class="codebox"><b id="roomBig"></b><button id="copyCode" type="button" class="ghost">コピー</button></div>
+      <span class="big-label">いまいる人</span>
+      <ol id="lobbyBoard" class="board"></ol>
+      <button id="startRoomBtn" type="button" class="cta">滑りはじめる</button>
+      <p class="hint">滑っている途中でも友達は入ってこられます。コードは画面上にも出ています。</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+'use strict';
+const V3 = THREE.Vector3;
+const G = 18, QR = 3.2, DECK = 2.5, AX = 22, AZ = 34;
+const PUSH_ACC = 9, PUSH_MAX = 12.5, BRAKE = 9, TURN = 2.3, AIR_SPIN = 7.2;
+const OLLIE_V = 6.0, OLLIE_BONUS = 2.4, CHARGE_MAX = 0.5;
+const TAU = Math.PI * 2;
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+
+/* ---------- renderer / scene ---------- */
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+$('game').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 400);
+
+function canvasTex(w, h, draw){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+}
+scene.background = canvasTex(4, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#24245e'); gr.addColorStop(0.42, '#7a3d7c');
+  gr.addColorStop(0.62, '#e46b6b'); gr.addColorStop(0.78, '#ffb36b'); gr.addColorStop(1, '#ffd9a0');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+scene.fog = new THREE.Fog(0xe9927a, 55, 170);
+
+scene.add(new THREE.HemisphereLight(0xa8b6ff, 0x6b4636, 0.75));
+const sun = new THREE.DirectionalLight(0xffd0a0, 1.7);
+sun.position.set(-34, 30, -26);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left:-48, right:48, top:48, bottom:-48, near:1, far:140});
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+
+function noiseTex(base, speck, lines){
+  const t = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9000; i++){
+      const v = Math.random();
+      g.fillStyle = `rgba(${speck},${v * 0.12})`;
+      g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    }
+    if (lines){
+      g.strokeStyle = 'rgba(40,30,30,.35)'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(0, 1); g.lineTo(w, 1); g.moveTo(1, 0); g.lineTo(1, h); g.stroke();
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+const groundTex = noiseTex('#9a948c', '30,20,20', true); groundTex.repeat.set(12, 18);
+const concTex = noiseTex('#b9b0a6', '40,30,30', false); concTex.repeat.set(0.25, 0.25);
+const woodTex = noiseTex('#c58f5a', '90,50,20', false); woodTex.repeat.set(0.5, 0.5);
+
+const mat = {
+  ground: new THREE.MeshStandardMaterial({map:groundTex, roughness:0.95}),
+  conc: new THREE.MeshStandardMaterial({map:concTex, roughness:0.9}),
+  wood: new THREE.MeshStandardMaterial({map:woodTex, roughness:0.8}),
+  metal: new THREE.MeshStandardMaterial({color:0xc9ccd6, metalness:0.85, roughness:0.3}),
+  rail: new THREE.MeshStandardMaterial({color:0xff5470, metalness:0.5, roughness:0.35}),
+  railY: new THREE.MeshStandardMaterial({color:0xffb12e, metalness:0.5, roughness:0.35}),
+};
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2 * (AX + DECK) + 2, 2 * (AZ + DECK) + 2), mat.ground);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const outside = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color:0x4a3a48, roughness:1}));
+outside.rotation.x = -Math.PI / 2; outside.position.y = -0.02; scene.add(outside);
+
+/* ---------- terrain: heightfield built from extruded profiles ---------- */
+const obstacles = [];
+function addObs(o){
+  o.c = Math.cos(o.a); o.s = Math.sin(o.a);
+  o.u0 = o.pts[0][0]; o.u1 = o.pts[o.pts.length - 1][0];
+  obstacles.push(o);
+  if (o.mat) buildObs(o);
+  return o;
+}
+function obsHeight(o, x, z){
+  const dx = x - o.x, dz = z - o.z;
+  const u = dx * o.c - dz * o.s, w = dx * o.s + dz * o.c;
+  if (w > o.hw || w < -o.hw || u < o.u0 || u > o.u1) return 0;
+  const p = o.pts;
+  for (let i = 0; i < p.length - 1; i++){
+    const a = p[i], b = p[i + 1];
+    if (u >= a[0] && u <= b[0]){
+      const span = b[0] - a[0];
+      if (span < 1e-6) return Math.max(a[1], b[1]);
+      return a[1] + (b[1] - a[1]) * (u - a[0]) / span;
+    }
+  }
+  return 0;
+}
+function heightAt(x, z){
+  if (Math.abs(x) > AX + DECK - 0.02 || Math.abs(z) > AZ + DECK - 0.02) return 8;
+  let h = 0;
+  for (let i = 0; i < obstacles.length; i++){ const v = obsHeight(obstacles[i], x, z); if (v > h) h = v; }
+  return h;
+}
+const _grad = {x:0, z:0, slope:0};
+function gradAt(x, z){
+  const e = 0.04, h0 = heightAt(x, z);
+  const fx = (heightAt(x + e, z) - h0) / e, bx = (h0 - heightAt(x - e, z)) / e;
+  const fz = (heightAt(x, z + e) - h0) / e, bz = (h0 - heightAt(x, z - e)) / e;
+  _grad.x = clamp(Math.abs(fx) < Math.abs(bx) ? fx : bx, -8, 8);
+  _grad.z = clamp(Math.abs(fz) < Math.abs(bz) ? fz : bz, -8, 8);
+  _grad.slope = Math.hypot(_grad.x, _grad.z);
+  return _grad;
+}
+function normalAt(x, z, out){ const g = gradAt(x, z); return out.set(-g.x, 1, -g.z).normalize(); }
+
+function buildObs(o){
+  const raw = [[o.u0, 0], ...o.pts, [o.u1, 0]];
+  const pts = raw.filter((p, i) => i === 0 || Math.abs(p[0] - raw[i-1][0]) > 1e-4 || Math.abs(p[1] - raw[i-1][1]) > 1e-4);
+  const shape = new THREE.Shape(pts.map(p => new THREE.Vector2(p[0], p[1])));
+  const geo = new THREE.ExtrudeGeometry(shape, {depth:o.hw * 2, bevelEnabled:false, steps:1});
+  geo.translate(0, 0, -o.hw);
+  const m = new THREE.Mesh(geo, o.mat);
+  m.rotation.y = o.a; m.position.set(o.x, 0, o.z);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m);
+}
+
+// quarter pipes (north / south), full width
+const qpPts = [];
+for (let d = 0; d <= 80; d += 5){ const t = d * Math.PI / 180; qpPts.push([QR * Math.sin(t), QR * (1 - Math.cos(t))]); }
+qpPts.push([QR, QR], [QR + DECK, QR]);
+addObs({x:0, z:-(AZ - QR), a:Math.PI / 2, hw:AX + DECK, pts:qpPts, mat:mat.conc});
+addObs({x:0, z:(AZ - QR), a:-Math.PI / 2, hw:AX + DECK, pts:qpPts, mat:mat.conc});
+// banks (east / west)
+const bankPts = [[0, 0], [2.4, 1.6], [2.4 + DECK, 1.6]];
+addObs({x:AX - 2.4, z:0, a:0, hw:AZ - QR, pts:bankPts, mat:mat.conc});
+addObs({x:-(AX - 2.4), z:0, a:Math.PI, hw:AZ - QR, pts:bankPts, mat:mat.conc});
+// funbox in the middle
+addObs({x:0, z:0, a:-Math.PI / 2, hw:2.4, pts:[[-7, 0], [-4.6, 0.9], [4.6, 0.9], [7, 0]], mat:mat.conc});
+// curved kickers
+const kick = []; for (let i = 0; i <= 6; i++){ const t = i / 6; kick.push([-1.6 + 3.2 * t, 0.95 * t * t]); }
+addObs({x:-12, z:15, a:Math.PI / 2, hw:1.3, pts:kick, mat:mat.wood});
+addObs({x:12, z:-15, a:-Math.PI / 2, hw:1.3, pts:kick, mat:mat.wood});
+// ledge
+addObs({x:10, z:4, a:-Math.PI / 2, hw:0.55, pts:[[-5, 0.45], [5, 0.45]], mat:mat.conc});
+// low manual pad / box
+addObs({x:-6, z:-18, a:0, hw:1.4, pts:[[-3, 0.3], [3, 0.3]], mat:mat.wood});
+
+/* coping + walls */
+function cyl(r, len, m){ const g = new THREE.CylinderGeometry(r, r, len, 12); const me = new THREE.Mesh(g, m); me.castShadow = true; return me; }
+for (const sgn of [-1, 1]){
+  const c = cyl(0.055, 2 * (AX + DECK), mat.metal);
+  c.rotation.z = Math.PI / 2; c.position.set(0, QR, sgn * AZ); scene.add(c);
+}
+for (const sgn of [-1, 1]){
+  const c = cyl(0.04, 2 * (AZ - QR), mat.metal);
+  c.rotation.x = Math.PI / 2; c.position.set(sgn * AX, 1.6, 0); scene.add(c);
+}
+// ledge coping
+for (const sx of [9.45, 10.55]){
+  const c = cyl(0.03, 10, mat.metal); c.rotation.x = Math.PI / 2; c.position.set(sx, 0.45, 4); scene.add(c);
+}
+
+const wallTex = canvasTex(1024, 256, (g, w, h) => {
+  g.fillStyle = '#5c4d63'; g.fillRect(0, 0, w, h);
+  const cols = ['#ff5470', '#ffb12e', '#56e0cf', '#8f7cff', '#f4f0e8'];
+  for (let i = 0; i < 26; i++){
+    g.fillStyle = cols[i % cols.length]; g.globalAlpha = 0.25 + Math.random() * 0.3;
+    g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 30 + Math.random() * 90, 14 + Math.random() * 40, Math.random() * 3, 0, TAU); g.fill();
+  }
+  g.globalAlpha = 1;
+  g.font = '900 150px "Dela Gothic One", Impact, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 14; g.strokeStyle = '#1b1030'; g.strokeText('SKATE', w / 2, h / 2 + 8);
+  g.fillStyle = '#ffb12e'; g.fillText('SKATE', w / 2, h / 2 + 8);
+});
+wallTex.wrapS = THREE.RepeatWrapping;
+function wall(w, h, d, x, y, z, rep){
+  const t = wallTex.clone(); t.needsUpdate = true; t.repeat.set(rep, 1);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({map:t, roughness:0.9}));
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m);
+}
+wall(2 * (AX + DECK) + 1.2, 3, 0.6, 0, QR + 1.5, -(AZ + DECK + 0.3), 4);
+wall(2 * (AX + DECK) + 1.2, 3, 0.6, 0, QR + 1.5, (AZ + DECK + 0.3), 4);
+wall(0.6, 4.4, 2 * (AZ + DECK), AX + DECK + 0.3, 2.2, 0, 1);
+wall(0.6, 4.4, 2 * (AZ + DECK), -(AX + DECK + 0.3), 2.2, 0, 1);
+
+// distant city silhouettes
+const cityMat = new THREE.MeshStandardMaterial({color:0x3b2a4a, roughness:1, emissive:0x1a0f22});
+for (let i = 0; i < 70; i++){
+  const ang = Math.random() * TAU, r = 75 + Math.random() * 70;
+  const w = 6 + Math.random() * 12, h = 8 + Math.random() * 38;
+  const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * (0.6 + Math.random())), cityMat);
+  b.position.set(Math.cos(ang) * r, h / 2, Math.sin(ang) * r); b.rotation.y = Math.random() * 3; scene.add(b);
+}
+// lamp posts
+const lampHead = new THREE.MeshStandardMaterial({color:0xfff1c8, emissive:0xffd890, emissiveIntensity:1.2});
+for (const [lx, lz] of [[-AX - 1.2, -14], [-AX - 1.2, 14], [AX + 1.2, -14], [AX + 1.2, 14]]){
+  const p = cyl(0.08, 6, mat.metal); p.position.set(lx, 1.6 + 3, lz); scene.add(p);
+  const hd = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), lampHead); hd.position.set(lx, 1.6 + 6.1, lz); scene.add(hd);
+}
+
+/* ---------- rails ---------- */
+const rails = [];
+function addRail(ax, ay, az, bx, by, bz, visible, m){
+  const a = new V3(ax, ay, az), b = new V3(bx, by, bz);
+  const d = new V3().subVectors(b, a), len = d.length(); d.normalize();
+  const r = {a, b, len, dir:d, ang:Math.atan2(d.x, d.z)};
+  rails.push(r);
+  if (visible){
+    const bar = cyl(0.035, len, m || mat.rail);
+    bar.position.copy(a).add(b).multiplyScalar(0.5); bar.position.y -= 0.035;
+    bar.quaternion.setFromUnitVectors(new V3(0, 1, 0), d); scene.add(bar);
+    const posts = Math.max(2, Math.round(len / 3) + 1);
+    for (let i = 0; i < posts; i++){
+      const t = i / (posts - 1), py = ay + (by - ay) * t - 0.035;
+      const gy = heightAt(ax + (bx - ax) * t, az + (bz - az) * t);
+      const p = cyl(0.03, py - gy, m || mat.rail);
+      p.position.set(ax + (bx - ax) * t, (py + gy) / 2, az + (bz - az) * t); scene.add(p);
+    }
+  }
+  return r;
+}
+addRail(-10, 0.55, -7, -10, 0.55, 7, true);
+addRail(0, 0.9 + 0.38, -4.4, 0, 0.9 + 0.38, 4.4, true, mat.railY);
+addRail(-16, 0.5, 6, -16, 0.5, 20, true);
+addRail(4, 1.15, -24, 16, 0.45, -24, true, mat.railY);   // down rail
+addRail(9.45, 0.45, -1, 9.45, 0.45, 9, false);
+addRail(10.55, 0.45, -1, 10.55, 0.45, 9, false);
+for (const s of [-1, 1]){ addRail(-(AX + DECK), QR, s * AZ, AX + DECK, QR, s * AZ, false).minAlong = 2.2; }
+for (const s of [-1, 1]){ addRail(s * AX, 1.6, -(AZ - QR), s * AX, 1.6, AZ - QR, false).minAlong = 2.2; }
+
+/* ---------- skater ---------- */
+function std(c, o){ return new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:0.7}, o || {})); }
+const Y = new V3(0, 1, 0), _t = new V3();
+function setBetween(m, a, b){ _t.subVectors(b, a); const L = Math.max(0.001, _t.length()); m.position.copy(a); m.quaternion.setFromUnitVectors(Y, _t.multiplyScalar(1 / L)); m.scale.set(1, L, 1); }
+// one skater (you, or another player online): board + rider rig, posed every frame by pose()
+function makeSkater(opts){
+const root = new THREE.Group(); scene.add(root);
+const boardPivot = new THREE.Group(); root.add(boardPivot);
+(function buildBoard(){
+  const grip = std(0x1d1a22, {roughness:1});
+  const bottomTex = canvasTex(64, 256, (g, w, h) => {
+    g.fillStyle = opts.deck[0]; g.fillRect(0, 0, w, h);
+    g.fillStyle = opts.deck[1]; g.fillRect(0, h * 0.3, w, h * 0.4);
+    g.fillStyle = '#1b1030'; g.fillRect(0, h * 0.46, w, h * 0.08);
+  });
+  const wood = std(0xd29a62);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.026, 0.62), [wood, wood, grip, std(0xffffff, {map:bottomTex}), wood, wood]);
+  deck.position.y = 0.025; deck.castShadow = true; boardPivot.add(deck);
+  for (const s of [-1, 1]){
+    const kickT = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.026, 0.16), [wood, wood, grip, wood, wood, wood]);
+    kickT.position.set(0, 0.025 + 0.024, s * 0.375); kickT.rotation.x = -s * 0.32; kickT.castShadow = true; boardPivot.add(kickT);
+    const truck = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.035, 0.05), mat.metal);
+    truck.position.set(0, -0.008, s * 0.22); boardPivot.add(truck);
+    for (const sx of [-1, 1]){
+      const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.035, 14), std(0xf2e6c9));
+      wh.rotation.z = Math.PI / 2; wh.position.set(sx * 0.1, -0.04, s * 0.22); wh.castShadow = true; boardPivot.add(wh);
+    }
+  }
+})();
+
+const riderG = new THREE.Group(); root.add(riderG);
+const C = opts;
+const M = {
+  shirt:std(C.shirt, {roughness:0.85}), pants:std(C.pants, {roughness:0.9}), skin:std(C.skin, {roughness:0.6}),
+  hair:std(C.hair, {roughness:0.45, side:THREE.DoubleSide}), shoe:std(C.shoe), sole:std(C.sole || 0x2b2b2e),
+  eyeW:std(0xf7f3ee, {roughness:0.3}), eye:std(0x1d1410, {roughness:0.2}), brow:std(C.brow || 0x17120f), lip:std(0xd28d86), cheek:std(0xe8a58f),
+  hat:std(C.hatColor || 0x333333, {roughness:0.95}), frame:std(0x1b1b1f, {roughness:0.4}),
+};
+function limb(r, m, r2){ const g = new THREE.CylinderGeometry(r, r2 || r * 0.88, 1, 12); g.translate(0, 0.5, 0); const me = new THREE.Mesh(g, m); me.castShadow = true; riderG.add(me); return me; }
+function ball(r, m, parent){ const me = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), m); me.castShadow = true; (parent || riderG).add(me); return me; }
+const legLow = C.shorts ? M.skin : M.pants;          // shorts show the shins
+const armM = C.longSleeve ? M.shirt : M.skin;          // long sleeves cover the whole arm
+const rig = {
+  thigh:[limb(0.08, M.pants, 0.066), limb(0.08, M.pants, 0.066)],
+  shin:[limb(C.shorts ? 0.055 : 0.064, legLow, 0.05), limb(C.shorts ? 0.055 : 0.064, legLow, 0.05)],
+  knee:[ball(C.shorts ? 0.058 : 0.066, legLow), ball(C.shorts ? 0.058 : 0.066, legLow)],
+  upper:[limb(0.047, armM, 0.042), limb(0.047, armM, 0.042)],
+  sleeve:[limb(0.066, M.shirt, 0.06), limb(0.066, M.shirt, 0.06)],
+  elbow:[ball(0.042, armM), ball(0.042, armM)],
+  fore:[limb(C.longSleeve ? 0.046 : 0.041, armM, 0.038), limb(C.longSleeve ? 0.046 : 0.041, armM, 0.038)],
+  shoe:[], hand:[],
+};
+for (let i = 0; i < 2; i++){
+  const s = new THREE.Group(); riderG.add(s); rig.shoe.push(s);
+  const up = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.07, 0.1), M.shoe); up.position.y = 0.012; up.castShadow = true; s.add(up);
+  const toe = ball(0.05, M.shoe, s); toe.scale.set(1, 0.7, 1); toe.position.set(0.11, 0.0, 0);
+  const sole = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.025, 0.108), M.sole); sole.position.y = -0.03; s.add(sole);
+  const h = ball(0.046, M.skin); h.scale.set(1, 1.1, 0.8); rig.hand.push(h);
+}
+const torsoG = new THREE.Group(); riderG.add(torsoG);
+{ // tee: rounded, slightly wider at the shoulders
+  const w = C.build || 1;
+  const g = new THREE.CylinderGeometry(0.195 * w, 0.172 * w, 0.5, 20); g.translate(0, 0.25, 0); g.scale(0.62, 1, 1);
+  const t = new THREE.Mesh(g, M.shirt); t.castShadow = true; torsoG.add(t);
+  for (const s of [-1, 1]){ const sh = ball(0.08, M.shirt, torsoG); sh.position.set(0, 0.46, s * 0.185); }
+  const top = ball(0.19 * w, M.shirt, torsoG); top.scale.set(0.62, 0.25, 1); top.position.y = 0.5;
+  const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.16, 0.16, 18), M.pants); pelvis.scale.set(0.65, 1, 1); pelvis.position.y = -0.03; pelvis.castShadow = true; torsoG.add(pelvis);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, 0.14, 12), M.skin); neck.position.y = 0.57; torsoG.add(neck);
+  if (C.stripe){ // a band across the chest
+    const sg = new THREE.CylinderGeometry(0.193 * w, 0.188 * w, 0.07, 20); sg.scale(0.63, 1, 1);
+    const st = new THREE.Mesh(sg, std(C.stripe, {roughness:0.85})); st.position.y = 0.33; torsoG.add(st);
+  }
+}
+const headG = new THREE.Group(); riderG.add(headG);
+{
+  const skull = ball(0.115, M.skin, headG); skull.scale.set(0.97, 1.1, 0.9);
+  for (const s of [-1, 1]){ const ear = ball(0.026, M.skin, headG); ear.scale.set(0.55, 1, 0.45); ear.position.set(-0.005, -0.01, s * 0.103); }
+  // face (head looks along +x)
+  for (const s of [-1, 1]){
+    const w = ball(0.016, M.eyeW, headG); w.scale.set(0.45, 0.62, 1.3); w.position.set(0.099, 0.004, s * 0.038);
+    const e = ball(0.0115, M.eye, headG); e.scale.set(0.55, 0.85, 1); e.position.set(0.1045, 0.004, s * 0.037);
+    // thick brows slanting down toward the nose read as a sharper, sterner face
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.008, C.thickBrows ? 0.013 : 0.008, C.thickBrows ? 0.04 : 0.036), M.brow);
+    b.position.set(0.101, C.thickBrows ? 0.028 : 0.031, s * 0.04); b.rotation.x = s * (C.thickBrows ? 0.26 : 0.12); headG.add(b);
+    if (!C.noBlush){ const ck = ball(0.017, M.cheek, headG); ck.scale.set(0.3, 0.6, 1); ck.position.set(0.097, -0.03, s * 0.055); ck.castShadow = false; }
+  }
+  if (C.jaw){   // squarer jaw and chin
+    const jaw = ball(0.085, M.skin, headG); jaw.scale.set(1.05, 0.62, 1.12); jaw.position.set(0.02, -0.07, 0);
+    const chin = ball(0.03, M.skin, headG); chin.scale.set(1, 0.8, 1.3); chin.position.set(0.085, -0.09, 0);
+  }
+  if (C.earring){ const ring = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.003, 8, 16), std(0xd8dbe2, {metalness:0.9, roughness:0.25})); ring.position.set(-0.005, -0.045, 0.108); headG.add(ring); }
+  const nose = ball(0.016, M.skin, headG); nose.scale.set(1, 0.95, 0.9); nose.position.set(0.106, -0.028, 0);
+  const lips = ball(0.02, M.lip, headG); lips.scale.set(0.3, 0.42, 1.25); lips.position.set(0.098, -0.062, 0);
+  const cap = (r, thetaLen, mat, sx, sy, sz, y) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 30, 16, 0, TAU, 0, thetaLen), mat);
+    m.scale.set(sx, sy, sz); m.position.y = y; m.castShadow = true; headG.add(m); return m;
+  };
+  const backHair = (r, thetaLen) => {   // back and sides, leaving the face open
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 30, 18, Math.PI + 0.95, TAU - 1.9, 0, thetaLen), M.hair);
+    m.scale.set(1.0, 1.06, 1.0); m.position.y = 0.014; m.castShadow = true; headG.add(m); return m;
+  };
+  const style = C.hairStyle;
+  if (style === 'mushroom'){
+    // mushroom crown, full back and sides, heavy bangs to the brows with a part just off centre
+    cap(0.13, 1.22, M.hair, 1.0, 1.06, 0.97, 0.014);
+    backHair(0.129, 1.97);
+    for (const [ps, pl] of [[Math.PI - 0.98, 0.9], [Math.PI + 0.1, 0.88]]){
+      const f = new THREE.Mesh(new THREE.SphereGeometry(0.133, 16, 10, ps, pl, 0.15, 1.27), M.hair);
+      f.scale.set(1.0, 1.06, 0.97); f.position.y = 0.014; headG.add(f);
+    }
+    const tuft = ball(0.05, M.hair, headG); tuft.scale.set(1.4, 0.6, 1.2); tuft.position.set(-0.03, 0.13, 0.02);
+  } else if (style === 'buzz'){
+    // close crop hugging the skull, hairline high on the forehead
+    const c = cap(0.12, 1.15, M.hair, 0.99, 1.1, 0.93, 0.008);
+    c.rotation.z = 0.35;   // tilt the cap back so the forehead shows
+  } else if (style === 'ponytail'){
+    cap(0.128, 1.2, M.hair, 1.0, 1.06, 0.96, 0.014);
+    backHair(0.127, 1.85);
+    // side-swept bang across the forehead
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.132, 16, 10, Math.PI - 0.9, 1.55, 0.2, 1.05), M.hair);
+    f.scale.set(1.0, 1.06, 0.97); f.position.y = 0.014; headG.add(f);
+    // tie + tail hanging behind
+    const tie = ball(0.03, std(C.accent || 0xff5470), headG); tie.position.set(-0.13, 0.04, 0);
+    const tail = ball(0.05, M.hair, headG); tail.scale.set(0.8, 2.3, 0.8); tail.position.set(-0.155, -0.06, 0); tail.rotation.z = -0.25;
+  } else if (style === 'twoblock'){
+    // two-block cut: sides buzzed tight, a thick top swept up and back with a lifted front
+    const sides = backHair(0.121, 1.78); sides.scale.set(0.99, 1.04, 0.93);
+    cap(0.128, 1.0, M.hair, 1.04, 1.18, 0.97, 0.03);
+    const spike = (x, y, z, rz, rx, h, r) => {
+      const g = new THREE.ConeGeometry(r, h, 10); g.translate(0, h / 2, 0);
+      const m = new THREE.Mesh(g, M.hair); m.position.set(x, y, z); m.rotation.set(rx, 0, rz); m.castShadow = true; headG.add(m);
+    };
+    // front quiff lifts up and slightly forward, the rest sweeps back
+    spike(0.085, 0.105, 0.012, -0.15, 0.05, 0.085, 0.045);
+    spike(0.07, 0.115, -0.03, 0.15, -0.2, 0.075, 0.04);
+    for (const [x, z] of [[0.03, 0.035], [0.02, -0.03], [-0.02, 0.0], [-0.04, 0.045], [-0.05, -0.04], [-0.08, 0.0]])
+      spike(x, 0.13 - Math.abs(x) * 0.3, z, 0.85 + Math.abs(x) * 2, z * 3, 0.07, 0.034);
+  } else if (style === 'beanie'){
+    backHair(0.126, 1.9);   // hair poking out under the hat
+    const hat = cap(0.137, 1.38, M.hat, 1.0, 1.1, 0.98, 0.02);
+    hat.rotation.z = 0.12;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.139, 0.139, 0.045, 28, 1, true), M.hat);
+    band.scale.set(1.0, 1, 0.98); band.position.set(0.003, 0.04, 0); band.rotation.z = 0.12; band.material.side = THREE.DoubleSide; headG.add(band);
+    const pom = ball(0.035, std(C.accent || 0xfff4e6, {roughness:1}), headG); pom.position.set(-0.03, 0.17, 0);
+  }
+  if (C.glasses){
+    for (const s of [-1, 1]){
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.0045, 8, 20), M.frame);
+      ring.position.set(0.108, 0.004, s * 0.039); ring.rotation.y = Math.PI / 2; headG.add(ring);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.005, 0.005), M.frame);
+      arm.position.set(0.06, 0.008, s * 0.098); headG.add(arm);
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.005, 0.03), M.frame); bridge.position.set(0.113, 0.008, 0); headG.add(bridge);
+  }
+}
+return {root, boardPivot, riderG, rig, torsoG, headG, M,
+  anim:{crouch:0.1, boardLift:0, pitch:0, lean:0, manual:0, gPitch:0, popT:9, push:0}};
+}
+
+/* the cast: pick one on the start screen */
+const CHARS = [
+  {id:'suo', name:'すお', bail:'すおが萎えた', tag:'トリプルヒールフリップの使い手', desc:'黒髪マッシュにピンクのTシャツ。十八番はもちろんトリプルヒールフリップ。',
+   shirt:0xeaa3d3, pants:0x33353f, skin:0xebbc98, hair:0x121318, hairStyle:'mushroom', shoe:0xf4f3ef, deck:['#ffb12e', '#ff5470']},
+  {id:'ken', name:'ケンシ', bail:'けんしがふられた', tag:'ボウルの暴れん坊', desc:'坊主頭に短パン。坂をフルスピードで駆け上がるのが好き。',
+   shirt:0xff7a3d, stripe:0xfff4e6, pants:0xc9b48a, shorts:true, skin:0xb27a52, hair:0x0e0e10, hairStyle:'buzz', shoe:0x26262b, sole:0xf4f3ef, build:1.06, deck:['#56e0cf', '#1b1030']},
+  {id:'mika', name:'ゆうと', bail:'女のストックが増えた', tag:'クールなレール職人', desc:'ツーブロックを立ち上げた黒の長袖にダークデニム。シルバーのピアスを光らせて、手すりを涼しい顔で流す。',
+   shirt:0x1b1d24, stripe:0x3fc1b0, longSleeve:true, pants:0x26324d, skin:0xe6b893, hair:0x1a120d, brow:0x140d09, hairStyle:'twoblock',
+   thickBrows:true, noBlush:true, jaw:true, earring:true, build:1.08, shoe:0xf4f3ef, sole:0x15151a, deck:['#1b1d24', '#3fc1b0']},
+  {id:'joe', name:'たつき', bail:'またケンシに自転車を壊された', tag:'マイペースなマニュアル好き', desc:'ニット帽にメガネ、ブルーのジーンズ。のんびり長くマニュアルを続けるタイプ。',
+   shirt:0x2c3e6b, longSleeve:true, pants:0x7c9cc4, skin:0xf3d2b8, hair:0xd9b25c, brow:0xa8843e, hairStyle:'beanie', hatColor:0xe0a526, accent:0xfff4e6, glasses:true, shoe:0xd23c3c, sole:0xf4f3ef, deck:['#ff5470', '#2c3e6b']},
+];
+const charById = id => CHARS.find(c => c.id === id) || CHARS[0];
+let myChar = CHARS[0];
+try { myChar = charById(localStorage.getItem('skatepark-char')); } catch (e){}
+let ME = makeSkater(myChar);
+
+function ik(a, target, L1, L2, bend, outKnee){
+  const d = _ikd.subVectors(target, a); let D = d.length(); const mx = L1 + L2 - 0.002;
+  if (D > mx){ d.multiplyScalar(mx / D); target.copy(a).add(d); D = mx; }
+  D = Math.max(D, 0.05); d.normalize();
+  const x = (L1 * L1 - L2 * L2 + D * D) / (2 * D), h = Math.sqrt(Math.max(0, L1 * L1 - x * x));
+  _ikb.copy(bend).addScaledVector(d, -bend.dot(d)).normalize();
+  outKnee.copy(a).addScaledVector(d, x).addScaledVector(_ikb, h);
+}
+const _ikd = new V3(), _ikb = new V3(), _t2 = new V3();
+const KNEE = new V3(1, 0, 0), ELBOW = new V3(-0.6, -1, 0);
+const P_hip = [new V3(), new V3()], P_foot = [new V3(), new V3()], P_knee = [new V3(), new V3()];
+const footYaw = [0, 0], footPitch = [0, 0];
+const P_sh = [new V3(), new V3()], P_hand = [new V3(), new V3()], P_elb = [new V3(), new V3()];
+
+/* ---------- game state ---------- */
+// ff / bf: how the front / back foot flicks the board (x = toe side +, y = up, z = toward the nose)
+const TRICKS = {
+  KeyJ:{name:'Kickflip', dur:0.42, pts:100, z:1, ff:[0.2, 0.1, 0.13], bf:[0, 0.06, 0]},
+  KeyK:{name:'Heelflip', dur:0.42, pts:100, z:-1, ff:[-0.2, 0.1, 0.13], bf:[0, 0.06, 0]},
+  KeyL:{name:'Pop Shove-it', dur:0.38, pts:80, y:0.5, ff:[0, 0.14, 0], bf:[-0.22, 0.02, -0.1]},
+  KeyI:{name:'360 Flip', dur:0.6, pts:250, z:1, y:1, ff:[0.13, 0.12, 0.1], bf:[-0.2, 0.0, -0.12]},
+  KeyU:{name:'Impossible', dur:0.5, pts:200, x:1, ff:[0, 0.16, 0], bf:[0, -0.05, -0.12]},
+  KeyY:{name:'Varial Heelflip', dur:0.5, pts:180, z:-1, y:-0.5, ff:[-0.18, 0.1, 0.11], bf:[-0.15, 0.03, -0.08]},
+  // suo's signature: three full heelflip rotations in one pop
+  KeyT:{name:'すおの十八番トリプルヒールフリップ', dur:0.72, pts:331511, z:-3, ff:[-0.26, 0.13, 0.15], bf:[0, 0.08, 0]},
+};
+const ZERO3 = [0, 0, 0];
+const START = {x:0, z:26, yaw:Math.PI};
+const P = {
+  pos:new V3(START.x, 0, START.z), vel:new V3(0, 0, -0.01), yaw:START.yaw,
+  state:'ride', N:new V3(0, 1, 0), sN:new V3(0, 1, 0), fakie:false,
+  charging:false, charge:0, sinceGround:0, ollied:false,
+  airTime:0, spin:0, trick:null, trickT:0, trickP:0, grabbing:false, grabItem:null, grabT:0,
+  grind:null, railCool:null, railCoolT:0, bailT:0, bailSide:1, pushPhase:0, pushing:false, landSquash:0,
+  slideT:0, dustT:0, manual:null, autoYaw:null,
+};
+const anim = ME.anim;
+let score = 0, best = 0, started = false;
+try { best = +localStorage.getItem('skatepark-best') || 0; } catch(e){}
+const combo = {items:[]};
+
+/* ---------- input ---------- */
+const keys = {};
+const isKey = (...c) => c.some(k => keys[k]);
+const BLOCK = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+/* shared actions (keyboard and controller both call these) */
+function jumpPress(){
+  if (P.state === 'ride'){ P.charging = true; P.charge = 0; }
+  else if (P.state === 'grind') jumpOffRail();
+  else if (P.state === 'air' && P.sinceGround < 0.14 && !P.ollied) ollie(0);
+}
+function jumpRelease(){
+  if (!P.charging) return;
+  P.charging = false;
+  const ch = Math.min(1, P.charge / CHARGE_MAX);
+  if (P.state === 'ride') ollie(ch);
+  else if (P.state === 'air' && P.sinceGround < 0.16 && !P.ollied) ollie(ch);
+}
+// one button = one trick: from the ground (or a rail) the pop happens automatically
+function autoPop(){
+  if (P.state === 'ride'){ ollie(0.55, true); return true; }
+  if (P.state === 'grind'){ jumpOffRail(); return true; }
+  if (P.state === 'air'){ if (P.sinceGround < 0.14 && !P.ollied) ollie(0.55, true); return true; }
+  return false;
+}
+function trickPress(t){
+  if (!started || P.trick || P.grabbing) return;
+  if (!autoPop()) return;
+  startTrick(t);
+}
+function grabPress(){
+  if (!started || P.trick || P.grabbing) return;
+  if (!autoPop()) return;
+  P.grabbing = true; P.grabT = 0; P.grabItem = addItem('Indy Grab', 100);
+}
+function grabRelease(){ if (P.grabbing){ P.grabbing = false; P.grabItem = null; } }
+function toggleHelp(){ $('help').hidden = !$('help').hidden; }
+function startGame(){
+  if (started) return;
+  $('start').hidden = true; started = true; window.focus();
+  initAudio();
+  const quiet = !AU.ctx || AU.ctx.state !== 'running';
+  popup('GO!', 'good', pad.connected ? (quiet ? 'R2 でプッシュ ・ 音は画面を一度クリックすると鳴ります' : 'R2 でプッシュしてスタート') : 'W でプッシュしてスタート');
+}
+// Esc: leave the session (and any online room) and go back to the first screen
+function backToTitle(){
+  if (NET.role !== 'off') goOffline();
+  for (const k in keys) keys[k] = false;
+  resetPlayer(); P.autoYaw = null; P.pushing = false;
+  score = 0; renderBoard();
+  started = false;
+  $('start').hidden = false;
+  setLobbyBusy(false);
+  showScreen('menuMain');
+}
+// Esc on a sub-screen of the start menu steps back one screen
+function escOnMenu(){
+  const back = document.querySelector('#start .screen:not([hidden]) .back');
+  if (back) back.click();
+  else if (!$('menuRoom').hidden){ goOffline(); showScreen('menuOnline'); setLobbyBusy(false); }
+}
+
+/* manual: balance on the back wheels; keeps a combo alive between tricks */
+const manualHeld = () => isKey('KeyM') || !!pad.btn[3];
+function startManual(){
+  P.manual = {bal:(Math.random() - 0.5) * 0.15, bv:0, time:0, item:addItem('Manual', 50)};
+  $('balance').hidden = false; $('balance').dataset.mode = 'manual';
+}
+function endManual(bank){
+  if (!P.manual) return;
+  P.manual = null; $('balance').hidden = true;
+  if (bank) bankCombo();
+}
+function manualPress(){
+  if (!started || P.state !== 'ride' || P.manual) return;
+  if (Math.hypot(P.vel.x, P.vel.z) < 1.5 || _grad.slope > 0.6) return;
+  startManual();
+}
+function manualRelease(){ if (P.manual && P.state === 'ride') endManual(true); }
+
+addEventListener('keydown', e => {
+  if (e.code === 'Escape' && !e.repeat){ e.preventDefault(); if (started) backToTitle(); else escOnMenu(); return; }
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;   // typing a name or room code
+  if (BLOCK.has(e.code)) e.preventDefault();
+  initAudio();
+  if (e.repeat) { keys[e.code] = true; return; }
+  keys[e.code] = true;
+  if (!started && charView && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ charOrbit += e.code === 'ArrowLeft' ? 0.2 : -0.2; charDrag.idle = 3; return; }
+  if (!started) return;
+  if (e.code === 'KeyH') toggleHelp();
+  if (e.code === 'KeyR') resetPlayer();
+  if (e.code === 'KeyV') toggleMute();
+  if (e.code === 'Space') jumpPress();
+  if (TRICKS[e.code]) trickPress(TRICKS[e.code]);
+  if (e.code === 'KeyO') grabPress();
+  if (e.code === 'KeyM') manualPress();
+});
+addEventListener('keyup', e => {
+  keys[e.code] = false;
+  if (e.code === 'Space') jumpRelease();
+  if (e.code === 'KeyO') grabRelease();
+  if (e.code === 'KeyM') manualRelease();
+});
+addEventListener('pointerdown', () => initAudio());
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; P.charging = false; });
+
+/* ---------- PS5 (DualSense) controller ---------- */
+// standard mapping: 0 ✕, 1 ○, 2 □, 3 △, 4 L1, 5 R1, 6 L2, 7 R2, 8 CREATE, 9 OPTIONS; axes 0/1 left stick, 2/3 right stick
+const pad = {connected:false, blocked:false, gp:null, lx:0, ly:0, rx:0, ry:0, l2:0, r2:0, btn:[], prev:[]};
+const RS = {needCenter:false};
+const dz = (v, d) => Math.abs(v) < d ? 0 : (v - Math.sign(v) * d) / (1 - d);
+function pollPad(){
+  let list = [];
+  try { list = navigator.getGamepads ? navigator.getGamepads() : []; }
+  catch (e){ if (!pad.blocked){ pad.blocked = true; updatePadUI(); } return; }
+  let gp = null;
+  for (const g of list) if (g && g.connected){ gp = g; break; }
+  if (!!gp !== pad.connected){ pad.connected = !!gp; updatePadUI(); }
+  pad.gp = gp;
+  if (!gp){ pad.lx = pad.ly = pad.rx = pad.ry = pad.l2 = pad.r2 = 0; pad.btn = []; pad.prev = []; return; }
+  const a = gp.axes, b = gp.buttons;
+  pad.lx = dz(a[0] || 0, 0.15); pad.ly = dz(a[1] || 0, 0.15);
+  pad.rx = a[2] || 0; pad.ry = a[3] || 0;
+  pad.prev = pad.btn;
+  pad.btn = b.map(x => x.pressed);
+  pad.l2 = b[6] ? b[6].value : 0; pad.r2 = b[7] ? b[7].value : 0;
+}
+const pressed = i => pad.btn[i] && !pad.prev[i];
+const released = i => !pad.btn[i] && pad.prev[i];
+function rumble(strength, ms){
+  const act = pad.gp && pad.gp.vibrationActuator;
+  if (!act || !act.playEffect) return;
+  try { act.playEffect('dual-rumble', {duration:ms, strongMagnitude:strength, weakMagnitude:strength * 0.6}).catch(() => {}); } catch (e){}
+}
+function padButtons(){
+  if (!pad.connected) return;
+  if (!started){
+    // on the first screen any button starts offline; once a host's room is ready, any button starts skating
+    const any = pad.btn.some((v, i) => v && !pad.prev[i]);
+    if (any && (!$('menuMain').hidden || !$('menuRoom').hidden)) startGame();
+    return;
+  }
+  if (pressed(0)) jumpPress();
+  if (released(0)) jumpRelease();
+  if (pressed(2)) grabPress();
+  if (released(2)) grabRelease();
+  if (pressed(3)) manualPress();
+  if (released(3)) manualRelease();
+  if (pressed(8)) resetPlayer();
+  if (pressed(9)) toggleHelp();
+  if (pressed(11)) trickPress(TRICKS.KeyT);   // R3 (click the right stick) = triple heelflip
+}
+// Right stick: one flick = one trick, on the ground or in the air
+//   ← kickflip, → heelflip, ↗ triple heelflip, ↑ impossible, ↓ pop shove-it, ↙ 360 flip, ↘ varial heelflip
+function padSticks(){
+  if (!pad.connected || !started) return;
+  const rx = pad.rx, ry = pad.ry, mag = Math.hypot(rx, ry);
+  if (RS.needCenter){ if (mag < 0.35) RS.needCenter = false; else return; }
+  if (mag < 0.8) return;
+  const ang = Math.atan2(-ry, rx) * 180 / Math.PI;   // 0 = right, 90 = up
+  let t;
+  if (ang > -30 && ang < 30) t = TRICKS.KeyK;
+  else if (ang >= 30 && ang < 60) t = TRICKS.KeyT;   // ↗ = triple heelflip
+  else if (ang >= 60 && ang <= 120) t = TRICKS.KeyU;
+  else if (ang > 120 || ang < -150) t = TRICKS.KeyJ;
+  else if (ang <= -120) t = TRICKS.KeyI;
+  else if (ang < -60) t = TRICKS.KeyL;
+  else t = TRICKS.KeyY;
+  trickPress(t);
+  RS.needCenter = true;
+}
+function turnInput(){
+  const k = (isKey('KeyA', 'ArrowLeft') ? 1 : 0) - (isKey('KeyD', 'ArrowRight') ? 1 : 0);
+  return clamp(k - pad.lx, -1, 1);
+}
+function spinInput(){ return clamp(turnInput() + (pad.btn[4] ? 1 : 0) - (pad.btn[5] ? 1 : 0), -1, 1); }
+const pushHeld = () => isKey('KeyW', 'ArrowUp') || pad.r2 > 0.25;
+const brakeHeld = () => isKey('KeyS', 'ArrowDown') || pad.l2 > 0.25 || !!pad.btn[1];
+function updatePadUI(){
+  const el = $('padStatus');
+  el.hidden = !(pad.connected || pad.blocked);
+  el.textContent = pad.blocked ? 'この表示ではコントローラーを読み取れません' : 'コントローラー接続中';
+  $('helpKb').hidden = pad.connected; $('helpPad').hidden = !pad.connected;
+}
+addEventListener('gamepadconnected', () => { pollPad(); });
+addEventListener('gamepaddisconnected', () => { pollPad(); });
+
+/* ---------- sound (all synthesized with Web Audio) ---------- */
+const AU = {ctx:null, muted:false, dist:0};
+function initAudio(){
+  if (AU.ctx){ if (AU.ctx.state === 'suspended') AU.ctx.resume().catch(() => {}); return; }
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return;
+  try { AU.ctx = new C(); } catch (e){ return; }
+  const c = AU.ctx, sr = c.sampleRate, len = sr * 2;
+  AU.master = c.createGain(); AU.master.gain.value = 0.85;
+  const comp = c.createDynamicsCompressor(); AU.master.connect(comp); comp.connect(c.destination);
+  AU.white = c.createBuffer(1, len, sr);
+  { const d = AU.white.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; }
+  AU.brown = c.createBuffer(1, len, sr);
+  { const d = AU.brown.getChannelData(0); let l = 0; for (let i = 0; i < len; i++){ l = (l + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.5; } }
+  AU.roll = loop(AU.brown, 'lowpass', 900, 0.8);
+  AU.hiss = loop(AU.white, 'bandpass', 800, 0.9);
+  AU.grind = loop(AU.white, 'bandpass', 2600, 7);
+  AU.grind2 = loop(AU.white, 'bandpass', 4100, 9);
+  AU.crowd = loop(AU.brown, 'bandpass', 700, 0.7);
+  AU.crowd.g.gain.value = 0.05;
+  if (c.state === 'suspended') c.resume().catch(() => {});
+}
+function loop(buf, type, f, q){
+  const c = AU.ctx, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = buf; s.loop = true; fl.type = type; fl.frequency.value = f; fl.Q.value = q; g.gain.value = 0;
+  s.connect(fl); fl.connect(g); g.connect(AU.master); s.start(0, Math.random() * 1.8);
+  return {s, f:fl, g};
+}
+function toggleMute(){ AU.muted = !AU.muted; if (AU.master) AU.master.gain.setTargetAtTime(AU.muted ? 0 : 0.85, AU.ctx.currentTime, 0.05); popup(AU.muted ? '音オフ' : '音オン'); }
+function burst(dur, type, f, q, vol, f2, when){
+  if (!AU.ctx) return;
+  const c = AU.ctx, t = c.currentTime + (when || 0);
+  const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = AU.white; fl.type = type; fl.Q.value = q;
+  fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.01, dur * 0.2)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(fl); fl.connect(g); g.connect(AU.master); s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05);
+}
+function thump(f0, f1, dur, vol, when){
+  if (!AU.ctx) return;
+  const c = AU.ctx, t = c.currentTime + (when || 0), o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + dur + 0.05);
+}
+const SFX = {
+  pop(){ burst(0.04, 'highpass', 2200, 0.8, 0.5); thump(200, 70, 0.11, 0.55); },
+  flip(){ burst(0.28, 'bandpass', 500, 2.5, 0.16, 2600); },
+  land(k){ thump(120, 45, 0.2, 0.45 + 0.4 * k); burst(0.09, 'lowpass', 1600, 0.7, 0.25 + 0.3 * k); burst(0.03, 'highpass', 3000, 0.7, 0.2, 0, 0.02); },
+  grindOn(){ burst(0.12, 'highpass', 2800, 1, 0.35); thump(320, 160, 0.08, 0.25); },
+  bail(){ thump(95, 35, 0.35, 0.8); burst(0.6, 'bandpass', 1200, 1, 0.35, 250); burst(0.25, 'highpass', 2500, 1, 0.2, 0, 0.25); },
+  seam(v){ burst(0.035, 'bandpass', 1500, 2.5, v); thump(140, 70, 0.05, v * 0.8); },
+};
+const CHEER_VOL = 0.35;   // overall crowd loudness
+// crowd cheer: roar of filtered noise + rising "woo" voices + scattered claps
+function cheer(level){
+  crowdExcite(level);
+  return;   // crowd sounds are off: the spectators still jump and wave
+  if (!AU.ctx) return;
+  const c = AU.ctx, t = c.currentTime, dur = 1.4 + level * 2.4;
+  for (const [f, q, w] of [[450, 1.1, 1], [1000, 1.4, 0.8], [2200, 1.8, 0.45]]){
+    const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = f < 900 ? AU.brown : AU.white; fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q;
+    const peak = CHEER_VOL * (0.06 + 0.32 * level) * w * (f < 900 ? 2.2 : 1);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.25);
+    g.gain.setValueAtTime(peak, t + dur * 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(fl); fl.connect(g); g.connect(AU.master); s.start(t, Math.random()); s.stop(t + dur + 0.1);
+  }
+  const voices = Math.round(3 + level * 9);
+  for (let i = 0; i < voices; i++){
+    const o = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain(), d0 = t + Math.random() * 0.35;
+    const base = 230 + Math.random() * 260, vd = 0.6 + Math.random() * dur * 0.5;
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(base, d0); o.frequency.exponentialRampToValueAtTime(base * (1.5 + Math.random() * 0.5), d0 + vd * 0.4);
+    o.frequency.exponentialRampToValueAtTime(base * 1.1, d0 + vd);
+    fl.type = 'bandpass'; fl.frequency.value = 800 + Math.random() * 500; fl.Q.value = 3;
+    const v = CHEER_VOL * (0.012 + 0.02 * level);
+    g.gain.setValueAtTime(0.0001, d0); g.gain.exponentialRampToValueAtTime(v, d0 + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, d0 + vd);
+    o.connect(fl); fl.connect(g); g.connect(AU.master); o.start(d0); o.stop(d0 + vd + 0.05);
+  }
+  const claps = Math.round(8 + level * 45);
+  for (let i = 0; i < claps; i++) burst(0.03, 'bandpass', 1300 + Math.random() * 900, 1.2, CHEER_VOL * (0.05 + Math.random() * 0.08), 0, 0.15 + Math.random() * dur * 0.85);
+}
+function ooh(){
+  crowdExcite(-1);
+  return;   // crowd sounds are off
+  if (!AU.ctx) return;
+  const c = AU.ctx, t = c.currentTime;
+  for (let i = 0; i < 7; i++){
+    const o = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain(), base = 200 + Math.random() * 120, d0 = t + Math.random() * 0.15;
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(base * 1.25, d0); o.frequency.exponentialRampToValueAtTime(base * 0.8, d0 + 1.1);
+    fl.type = 'lowpass'; fl.frequency.value = 650; g.gain.setValueAtTime(0.0001, d0); g.gain.exponentialRampToValueAtTime(0.012, d0 + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, d0 + 1.2);
+    o.connect(fl); fl.connect(g); g.connect(AU.master); o.start(d0); o.stop(d0 + 1.3);
+  }
+}
+function updateAudio(dt){
+  if (!AU.ctx) return;
+  const t = AU.ctx.currentTime, sp = P.vel.length(), ground = P.state === 'ride';
+  const r = ground ? clamp(sp / 12, 0, 1) : 0, slide = ground && P.slideT > 0 ? 1 : 0;
+  AU.roll.g.gain.setTargetAtTime(r * 0.2 * (P.manual ? 0.6 : 1), t, 0.04);
+  AU.roll.f.frequency.setTargetAtTime(250 + sp * 55, t, 0.05);
+  AU.hiss.g.gain.setTargetAtTime(r * 0.025 + slide * 0.09, t, 0.04);
+  AU.hiss.f.frequency.setTargetAtTime(500 + sp * 70 + slide * 900, t, 0.05);
+  const gr = P.state === 'grind' ? clamp(Math.abs(P.grind.s) / 6, 0.4, 1) : 0;
+  AU.grind.g.gain.setTargetAtTime(gr * 0.22, t, 0.03);
+  AU.grind2.g.gain.setTargetAtTime(gr * 0.12, t, 0.03);
+  AU.grind.f.frequency.setTargetAtTime(2300 + Math.random() * 700, t, 0.02);
+  AU.crowd.g.gain.setTargetAtTime(0, t, 0.2);   // no crowd murmur
+  // expansion joints in the concrete go clack-clack under the wheels
+  if (ground && sp > 0.8 && heightAt(P.pos.x, P.pos.z) < 0.01){
+    AU.dist += sp * dt;
+    if (AU.dist > 4.25){ AU.dist -= 4.25; SFX.seam(0.03 + r * 0.06); }
+  }
+}
+
+/* ---------- spectators on the decks ---------- */
+const crowdState = {excite:0.08, list:[], t:0};
+{
+  const tops = [0xff5470, 0xffb12e, 0x56e0cf, 0x8f7cff, 0xf4f0e8, 0x3d7bd9, 0x2fa36b, 0xeaa3d3];
+  const skins = [0xf0c8a6, 0xd9a07a, 0xa8754f, 0x7a4f33];
+  const topM = tops.map(c => new THREE.MeshLambertMaterial({color:c}));
+  const skinM = skins.map(c => new THREE.MeshLambertMaterial({color:c}));
+  const legM = new THREE.MeshLambertMaterial({color:0x2c2b36});
+  const hairM = new THREE.MeshLambertMaterial({color:0x1a1716});
+  const gLeg = new THREE.CylinderGeometry(0.15, 0.13, 0.8, 8); gLeg.translate(0, 0.4, 0);
+  const gBody = new THREE.CylinderGeometry(0.2, 0.17, 0.6, 10); gBody.translate(0, 1.1, 0);
+  const gHead = new THREE.SphereGeometry(0.13, 12, 10);
+  const gHair = new THREE.SphereGeometry(0.138, 12, 8, 0, TAU, 0, 1.4);
+  const gArm = new THREE.CylinderGeometry(0.05, 0.045, 0.6, 6); gArm.translate(0, -0.3, 0);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  function person(x, y, z){
+    const g = new THREE.Group(), top = pick(topM), skin = pick(skinM), s = 0.9 + Math.random() * 0.2;
+    g.add(new THREE.Mesh(gLeg, legM)); g.add(new THREE.Mesh(gBody, top));
+    const head = new THREE.Mesh(gHead, skin); head.position.y = 1.55; g.add(head);
+    if (Math.random() < 0.8){ const h = new THREE.Mesh(gHair, hairM); h.position.y = 1.57; g.add(h); }
+    const arms = [];
+    for (const side of [-1, 1]){
+      const a = new THREE.Mesh(gArm, top); a.position.set(side * 0.23, 1.36, 0); g.add(a); arms.push(a);
+    }
+    g.scale.setScalar(s); g.position.set(x, y, z);
+    scene.add(g);
+    crowdState.list.push({g, arms, x, y, z, ph:Math.random() * TAU, hop:0.6 + Math.random() * 0.6, wave:Math.random() < 0.5});
+  }
+  for (const sz of [-1, 1]) for (let x = -20; x <= 20; x += 1.25) if (Math.random() < 0.72) person(x + (Math.random() - 0.5) * 0.4, QR, sz * (AZ + DECK - 0.55 - Math.random() * 0.5));
+  for (const sx of [-1, 1]) for (let z = -26; z <= 26; z += 1.4) if (Math.random() < 0.6) person(sx * (AX + DECK - 0.55 - Math.random() * 0.4), 1.6, z + (Math.random() - 0.5) * 0.4);
+}
+function crowdExcite(level){
+  if (level < 0){ crowdState.disappoint = 1.2; return; }
+  crowdState.excite = Math.max(crowdState.excite, 0.25 + level * 0.75);
+}
+function updateCrowd(dt){
+  const cs = crowdState; cs.t += dt;
+  cs.excite = Math.max(0.08, cs.excite - dt * 0.28);
+  if (cs.disappoint > 0) cs.disappoint -= dt;
+  const e = cs.excite, sad = cs.disappoint > 0;
+  for (const p of cs.list){
+    p.g.rotation.y = Math.atan2(P.pos.x - p.x, P.pos.z - p.z);
+    const b = Math.abs(Math.sin(cs.t * 8 + p.ph));
+    p.g.position.y = p.y + (e > 0.2 && !sad ? b * 0.32 * p.hop * e : 0);
+    const raise = sad ? 2.4 : 0.15 + clamp((e - 0.1) * 3, 0, 1) * 2.5;
+    const wv = Math.sin(cs.t * 7 + p.ph) * 0.35 * e;
+    p.arms[0].rotation.set(sad ? -2.6 : 0, 0, -(raise + (p.wave ? wv : 0)));
+    p.arms[1].rotation.set(sad ? -2.6 : 0, 0, raise - (p.wave ? wv : 0));
+  }
+}
+
+/* ---------- dust ---------- */
+const dust = [];
+{
+  const g = new THREE.SphereGeometry(0.1, 8, 6);
+  for (let i = 0; i < 40; i++){
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0xd8c4ad, transparent:true, opacity:0, depthWrite:false}));
+    m.visible = false; scene.add(m); dust.push({m, life:0, max:1, vx:0, vz:0});
+  }
+}
+let dustIdx = 0;
+function puff(x, y, z, n){
+  for (let k = 0; k < n; k++){
+    const d = dust[dustIdx++ % dust.length];
+    d.m.position.set(x + (Math.random() - 0.5) * 0.3, y, z + (Math.random() - 0.5) * 0.3);
+    d.max = d.life = 0.45 + Math.random() * 0.35;
+    d.vx = (Math.random() - 0.5) * 1.2; d.vz = (Math.random() - 0.5) * 1.2;
+    d.m.visible = true;
+  }
+}
+function updateDust(dt){
+  for (const d of dust){
+    if (d.life <= 0) continue;
+    d.life -= dt;
+    if (d.life <= 0){ d.m.visible = false; continue; }
+    const k = 1 - d.life / d.max;
+    d.m.position.x += d.vx * dt; d.m.position.z += d.vz * dt; d.m.position.y += 0.35 * dt;
+    d.m.scale.setScalar(0.6 + k * 2.2);
+    d.m.material.opacity = 0.45 * (1 - k);
+  }
+}
+
+/* ---------- HUD ---------- */
+const popEl = $('popup'), subEl = $('sub');
+function popup(text, cls, sub){
+  popEl.className = 'hud'; void popEl.offsetWidth;
+  popEl.textContent = text; popEl.className = 'hud show ' + (cls || '') + (text.length > 8 ? ' long' : '');
+  if (sub !== undefined){ subEl.className = 'hud'; void subEl.offsetWidth; subEl.textContent = sub; subEl.className = 'hud show'; }
+}
+function addItem(name, pts){ const it = {name, pts}; combo.items.push(it); popup(name); netEvent({k:'item', n:name}); renderCombo(); return it; }
+function comboBase(){ let s = 0; for (const i of combo.items) s += Math.round(i.pts); return s; }
+// any combo that contains suo's triple heelflip is worth exactly this, no matter what else is in it
+const SUO_PTS = 331511;
+const hasSuo = () => combo.items.some(i => i.name === TRICKS.KeyT.name);
+const comboTotal = () => hasSuo() ? SUO_PTS : comboBase() * combo.items.length;
+function renderCombo(){
+  const n = combo.items.length;
+  $('comboNames').textContent = n ? combo.items.slice(-7).map(i => i.name).join(' + ') + (n > 7 ? ' …' : '') : '';
+  $('comboPts').innerHTML = !n ? '' : hasSuo() ? `${SUO_PTS.toLocaleString()} <b>すおの十八番</b>` : `${comboBase().toLocaleString()} <b>× ${n}</b>`;
+}
+function bankCombo(slid){
+  if (!combo.items.length) return;
+  const total = comboTotal();
+  score += total;
+  if (total > best){ best = total; try { localStorage.setItem('skatepark-best', String(best)); } catch(e){} }
+  popup('+' + total.toLocaleString(), 'good', slid ? 'パワースライドで立て直した!' : combo.items.length > 2 ? `${combo.items.length}コンボ!` : '着地成功');
+  if (total >= 60) cheer(clamp((Math.log10(total) - 1.7) / 1.9, 0.05, 1));
+  netEvent({k:'land', p:total});
+  combo.items = []; renderCombo(); renderBoard();
+}
+// each character has their own line when they fall
+function loseCombo(reason){ combo.items = []; renderCombo(); popup(myChar.bail, 'bad', reason); }
+
+/* ---------- physics helpers ---------- */
+function rotY(v, a){ const c = Math.cos(a), s = Math.sin(a); const x = v.x * c + v.z * s, z = -v.x * s + v.z * c; v.x = x; v.z = z; }
+function moveHoriz(dt, yRef, lim){
+  let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.z * dt;
+  const blocked = (x, z) => heightAt(x, z) > yRef + lim;
+  let hit = false;
+  if (blocked(nx, nz)){
+    hit = true;
+    if (!blocked(nx, P.pos.z)){ nz = P.pos.z; P.vel.z *= -0.15; }
+    else if (!blocked(P.pos.x, nz)){ nx = P.pos.x; P.vel.x *= -0.15; }
+    else { nx = P.pos.x; nz = P.pos.z; P.vel.x *= -0.15; P.vel.z *= -0.15; }
+  }
+  P.pos.x = nx; P.pos.z = nz; return hit;
+}
+function goAir(){
+  P.autoYaw = null;
+  P.state = 'air'; P.airTime = 0; P.spin = 0; P.sinceGround = 0; P.ollied = false;
+  if (P.manual) endManual(false);   // rolling off a ledge in a manual keeps the combo going
+}
+function ollie(charge, silent){
+  const fromGround = P.state === 'ride';
+  const v = OLLIE_V + OLLIE_BONUS * charge;
+  if (fromGround){ P.vel.addScaledVector(P.N, v); goAir(); }
+  else P.vel.y = Math.max(P.vel.y, 0) + v * 0.9;   // late pop right after leaving a lip
+  P.charging = false; P.ollied = true; anim.pitch = -0.55; anim.popT = 0; P.pos.y += 0.02;
+  SFX.pop();
+  if (!silent) addItem('Ollie', 25);
+}
+function startTrick(t){ P.trick = t; P.trickT = 0; P.trickP = 0; addItem(t.name, t.pts); SFX.flip(); }
+function addSpinItem(){
+  const halves = Math.round(Math.abs(P.spin) / Math.PI);
+  if (halves >= 1) addItem((P.spin > 0 ? 'FS ' : 'BS ') + halves * 180, halves * 100);
+  P.spin = 0;
+}
+function bail(reason){
+  P.state = 'bail'; P.bailT = 0; P.bailSide = Math.random() < 0.5 ? -1 : 1;
+  P.trick = null; P.grabbing = false; P.grabItem = null; P.grind = null; P.charging = false; P.slideT = 0; P.manual = null;
+  $('balance').hidden = true;
+  SFX.bail(); ooh();
+  netEvent({k:'bail'});
+  loseCombo(reason);
+}
+function resetPlayer(){
+  P.pos.set(START.x, 0, START.z); P.vel.set(0, 0, -0.01); P.yaw = START.yaw;
+  P.state = 'ride'; P.trick = null; P.grabbing = false; P.grind = null; P.charging = false; P.slideT = 0; P.manual = null;
+  P.sN.set(0, 1, 0); combo.items = []; renderCombo(); $('balance').hidden = true;
+  camState.yaw = START.yaw; camState.init = false;
+}
+
+/* ---------- states ---------- */
+const _gt = new V3();
+function rideStep(dt){
+  normalAt(P.pos.x, P.pos.z, P.N);
+  const slope = _grad.slope;
+  const turn = turnInput();
+  if (turn){ const a = turn * TURN * dt; rotY(P.vel, a); P.yaw += a; }
+  anim.lean += (turn * 0.22 - anim.lean) * Math.min(1, 8 * dt);
+  let hs = Math.hypot(P.vel.x, P.vel.z);
+  const fx = Math.sin(P.yaw), fz = Math.cos(P.yaw);
+  if (P.manual){
+    // W/S (or left stick ↑↓) shift weight; the board keeps tipping on its own the longer you hold it
+    const m = P.manual;
+    m.time += dt;
+    const inp = clamp((isKey('KeyW', 'ArrowUp') ? 1 : 0) - (isKey('KeyS', 'ArrowDown') ? 1 : 0) - pad.ly, -1, 1);
+    m.bv += (m.bal * 2.0 + (Math.random() - 0.5) * (1.4 + m.time * 1.1)) * dt + inp * 3.3 * dt;
+    m.bv *= Math.exp(-0.6 * dt);
+    m.bal += m.bv * dt;
+    m.item.pts = 50 + 150 * m.time; renderCombo();
+    $('balance').querySelector('.needle').style.left = (50 + clamp(m.bal, -1, 1) * 50) + '%';
+    if (Math.abs(m.bal) > 1){ bail(m.bal > 0 ? '前に倒れた(マニュアル)' : '後ろにひっくり返った(マニュアル)'); rumble(0.9, 260); return; }
+    if (hs < 1 || slope > 0.9){ endManual(true); }
+  }
+  const wasPushing = P.pushing;
+  P.pushing = false;
+  if (pushHeld() && slope < 0.35 && !P.charging && P.slideT <= 0 && !P.manual){
+    P.pushing = true;
+    if (!wasPushing) P.pushPhase = 0;
+    P.pushPhase += dt / 0.72;
+    // the speed comes from the stroke, while the foot is on the ground
+    const ph = P.pushPhase % 1, f = ph > 0.18 && ph < 0.68 ? 1.9 : 0.3;
+    let dx, dz;
+    if (hs > 0.3){ dx = P.vel.x / hs; dz = P.vel.z / hs; }
+    else { const s = P.fakie ? -1 : 1; dx = fx * s; dz = fz * s; }
+    if (hs < PUSH_MAX){ P.vel.x += dx * PUSH_ACC * f * dt; P.vel.z += dz * PUSH_ACC * f * dt; }
+  }
+  if (brakeHeld() && !P.manual){
+    const sp = P.vel.length(); if (sp > 0.001) P.vel.multiplyScalar(Math.max(0, sp - BRAKE * dt) / sp);
+  }
+  if (P.charging) P.charge += dt;
+  // gravity along surface, rolling friction
+  _gt.set(0, -G, 0).addScaledVector(P.N, G * P.N.y);
+  P.vel.addScaledVector(_gt, dt);
+  P.vel.multiplyScalar(Math.exp(-0.12 * dt));
+  // wheels: board axis follows travel direction (forward or fakie)
+  hs = Math.hypot(P.vel.x, P.vel.z);
+  if (hs > 0.8){
+    const va = Math.atan2(P.vel.x, P.vel.z);
+    let d = wrap(va - P.yaw);
+    P.fakie = Math.abs(d) > Math.PI / 2;
+    if (P.fakie) d = wrap(d + Math.PI);
+    if (P.slideT > 0){
+      // powerslide: the board skids back in line with the travel direction, scrubbing speed as it goes
+      P.slideT -= dt;
+      if (Math.abs(d) < 0.06) P.slideT = 0;
+      P.vel.multiplyScalar(Math.exp(-2.4 * Math.abs(Math.sin(d)) * dt));
+      anim.lean += (-Math.sign(d) * 0.32 - anim.lean) * Math.min(1, 10 * dt);
+      P.dustT -= dt;
+      if (P.dustT <= 0){ P.dustT = 0.035; puff(P.pos.x + (Math.random() - 0.5) * 0.4, P.pos.y + 0.05, P.pos.z + (Math.random() - 0.5) * 0.4, 1); }
+      P.yaw += d * Math.min(1, 3.4 * dt);
+    } else P.yaw += d * Math.min(1, 12 * dt);
+  }
+  P.vel.addScaledVector(P.N, -P.vel.dot(P.N));
+  if (P.vel.length() > 17) P.vel.setLength(17);
+  const yPred = P.pos.y + P.vel.y * dt;
+  moveHoriz(dt, yPred, 0.25);
+  const h = heightAt(P.pos.x, P.pos.z);
+  if (yPred > h + 0.06){ P.pos.y = yPred; goAir(); return; }
+  P.pos.y = h;
+  const g = gradAt(P.pos.x, P.pos.z);
+  if (g.slope > 3 && P.vel.y > 0){
+    // lip of the quarter pipe: go vertical
+    const gx = g.x / g.slope, gz = g.z / g.slope;
+    const into = P.vel.x * gx + P.vel.z * gz;
+    P.vel.x -= gx * (into + 0.45); P.vel.z -= gz * (into + 0.45);
+    goAir();
+  }
+}
+
+function airStep(dt){
+  P.airTime += dt; P.sinceGround += dt;
+  P.vel.y -= G * dt;
+  const turn = spinInput();
+  if (turn){ const a = turn * AIR_SPIN * dt; P.yaw += a; P.spin += a; if (P.autoYaw !== null) P.autoYaw += a; }
+  if (P.autoYaw !== null){   // auto-turn out of a slide: quick 90° swing that does not count as a spin
+    const d = P.autoYaw - P.yaw;
+    P.yaw += Math.sign(d) * Math.min(Math.abs(d), 10 * dt);
+    if (Math.abs(d) < 0.002) P.autoYaw = null;
+  }
+  if (P.trick){
+    P.trickT += dt; P.trickP = Math.min(1, P.trickT / P.trick.dur);
+    if (P.trickP >= 1) P.trick = null;
+  }
+  if (P.grabbing){ P.grabT += dt; if (P.grabItem) { P.grabItem.pts = 100 + 300 * P.grabT; renderCombo(); } }
+  P.pos.y += P.vel.y * dt;
+  moveHoriz(dt, P.pos.y, 0.35);
+  if (P.railCoolT > 0) P.railCoolT -= dt;
+  if (P.vel.y < 2.5 && tryGrind()) return;
+  const h = heightAt(P.pos.x, P.pos.z);
+  if (P.pos.y <= h) land(h);
+}
+
+function land(h){
+  if (P.autoYaw !== null){ P.yaw = P.autoYaw; P.autoYaw = null; }
+  P.pos.y = h;
+  normalAt(P.pos.x, P.pos.z, P.N);
+  const impact = -P.vel.dot(P.N);
+  P.vel.addScaledVector(P.N, -P.vel.dot(P.N));
+  let reason = null, slid = false;
+  if (P.trick && P.trickP < 0.72) reason = 'トリックの途中で着地';
+  if (P.grabbing) reason = 'グラブを離していない';
+  const hs = Math.hypot(P.vel.x, P.vel.z);
+  if (!reason && hs > 0.8){
+    let d = Math.abs(wrap(Math.atan2(P.vel.x, P.vel.z) - P.yaw));
+    d = Math.min(d, Math.PI - d);
+    // up to ~70° off: skid it out instead of falling
+    if (d > 1.22) reason = '板が真横のまま着地';
+    else if (d > 0.2){ P.slideT = 0.25 + d * 0.9; P.dustT = 0; slid = true; puff(P.pos.x, P.pos.y + 0.05, P.pos.z, 5); }
+  }
+  const air = P.airTime;
+  P.state = 'ride'; P.trick = null;
+  if (reason){ bail(reason); rumble(0.9, 260); return; }
+  addSpinItem();
+  const k = clamp(impact * 0.05, 0.15, 0.6);
+  if (air > 0.25){ P.landSquash = clamp(impact * 0.06, 0.15, 0.6); rumble(k, 90); }
+  if (air > 0.12) SFX.land(k);
+  if (slid && combo.items.length) addItem('Powerslide', 50);
+  // land holding manual → roll straight into a manual and keep the combo alive
+  if (!slid && manualHeld() && hs > 1.5 && combo.items.length){ startManual(); return; }
+  bankCombo(slid);
+}
+
+// off = where the board centre sits relative to the rail, along the board (nose/tail hang the rest of the deck off one side)
+const GRINDS = {
+  fifty:{name:'50-50 Grind', base:100, rate:160, perp:false, drop:0.03, off:0,     pitch:0},
+  board:{name:'Boardslide',  base:120, rate:170, perp:true,  drop:0.07, off:0,     pitch:0},
+  nose: {name:'Noseslide',   base:150, rate:190, perp:true,  drop:0.13, off:-0.33, pitch:-0.15},
+  tail: {name:'Tailslide',   base:150, rate:190, perp:true,  drop:0.13, off:0.33,  pitch:0.15},
+};
+// W / ↑ / left stick up = nose, S / ↓ / left stick down = tail
+function slideInput(){
+  const f = (isKey('KeyW', 'ArrowUp') ? 1 : 0) - (isKey('KeyS', 'ArrowDown') ? 1 : 0) - pad.ly;
+  return f > 0.5 ? 'nose' : f < -0.5 ? 'tail' : null;
+}
+function grindYaw(k, r){
+  if (!k.perp){ const c = Math.cos(wrap(P.yaw - r.ang)); return c >= 0 ? r.ang : r.ang + Math.PI; }
+  const s = Math.sin(wrap(P.yaw - r.ang)); return r.ang + (s >= 0 ? Math.PI / 2 : -Math.PI / 2);
+}
+function setGrindKind(g, key){
+  const k = GRINDS[key];
+  g.key = key; g.k = k; g.yaw = grindYaw(k, g.r);
+  g.item = addItem(k.name, k.base); g.itemT = 0;
+}
+function tryGrind(){
+  for (const r of rails){
+    if (r === P.railCool && P.railCoolT > 0) continue;
+    const abx = r.b.x - r.a.x, abz = r.b.z - r.a.z, L2 = abx * abx + abz * abz;
+    const t = ((P.pos.x - r.a.x) * abx + (P.pos.z - r.a.z) * abz) / L2;
+    if (t < 0.01 || t > 0.99) continue;
+    const cx = r.a.x + abx * t, cz = r.a.z + abz * t;
+    if (Math.hypot(P.pos.x - cx, P.pos.z - cz) > 0.75) continue;   // generous magnet
+    const ry = r.a.y + (r.b.y - r.a.y) * t;
+    if (P.pos.y < ry - 0.35 || P.pos.y > ry + 0.8) continue;
+    const hsAlong = (P.vel.x * r.dir.x + P.vel.z * r.dir.z) / Math.hypot(r.dir.x, r.dir.z);
+    if (Math.abs(hsAlong) < (r.minAlong || 0.8)) continue;
+    if (P.trick && P.trickP < 0.6){ bail('トリックの途中でレールに乗った'); return true; }
+    if (P.grabbing){ P.grabbing = false; P.grabItem = null; }
+    P.trick = null;
+    addSpinItem();
+    const g = {r, t, s:Math.max(3, Math.abs(hsAlong)) * Math.sign(hsAlong), bal:(Math.random() - 0.5) * 0.1, bv:0, time:0, lastIn:null};
+    let key = slideInput();
+    if (!key) key = Math.abs(Math.cos(wrap(P.yaw - r.ang))) > 0.6 ? 'fifty' : 'board';
+    g.lastIn = slideInput();
+    setGrindKind(g, key);
+    g.off = 0; g.drop = g.k.drop;
+    P.grind = g;
+    P.state = 'grind'; P.spin = 0; SFX.grindOn();
+    $('balance').hidden = false;
+    return true;
+  }
+  return false;
+}
+function leaveRail(up){
+  const g = P.grind, r = g.r;
+  P.vel.copy(r.dir).multiplyScalar(g.s); P.vel.y = Math.max(P.vel.y, 0) + up;
+  P.railCool = r; P.railCoolT = 0.35; P.grind = null;
+  $('balance').hidden = true;
+  goAir(); P.ollied = true;
+  // coming out of a slide (board across the rail): turn it back in line with the rail automatically
+  if (g.k.perp) P.autoYaw = nearestAxis(r.ang, P.yaw);
+}
+// rail heading or its reverse, whichever the board turns to with the shorter swing
+function nearestAxis(ang, yaw){
+  const a = yaw + wrap(ang - yaw), b = yaw + wrap(ang + Math.PI - yaw);
+  return Math.abs(a - yaw) <= Math.abs(b - yaw) ? a : b;
+}
+function jumpOffRail(){ anim.pitch = -0.5; anim.popT = 0; SFX.pop(); leaveRail(OLLIE_V); }
+function grindStep(dt){
+  const g = P.grind, r = g.r;
+  g.time += dt; g.itemT += dt;
+  g.s -= G * r.dir.y * dt;   // slope of the rail speeds you up or slows you down
+  g.s *= Math.exp(-0.15 * dt);
+  g.t += g.s * dt / r.len;
+  // switch slides mid-grind: press toward the nose or the tail
+  const inp = slideInput();
+  if (inp && inp !== g.lastIn && inp !== g.key){ setGrindKind(g, inp); SFX.grindOn(); }
+  g.lastIn = inp;
+  P.yaw += wrap(g.yaw - P.yaw) * Math.min(1, 14 * dt);
+  g.off += (g.k.off - g.off) * Math.min(1, 12 * dt);
+  g.drop += (g.k.drop - g.drop) * Math.min(1, 12 * dt);
+  // balance: gently unstable, a bit livelier the longer you hold it
+  const turn = turnInput();
+  g.bv += (g.bal * 1.3 + (Math.random() - 0.5) * (0.9 + g.time * 0.6)) * dt - turn * 3.4 * dt;
+  g.bv *= Math.exp(-0.9 * dt);
+  g.bal += g.bv * dt;
+  anim.lean += (g.bal * 0.6 - anim.lean) * Math.min(1, 10 * dt);
+  g.item.pts = g.k.base + g.k.rate * g.itemT; renderCombo();
+  $('balance').querySelector('.needle').style.left = (50 + clamp(g.bal, -1, 1) * 50) + '%';
+  if (Math.abs(g.bal) > 1){ bail('バランスを崩した'); rumble(0.9, 260); return; }
+  if (Math.abs(g.s) < 0.5){ bail('スピード不足で止まった'); return; }
+  P.pos.copy(r.a).addScaledVector(r.dir, g.t * r.len); P.pos.y -= g.drop;
+  P.pos.x += Math.sin(g.yaw) * g.off; P.pos.z += Math.cos(g.yaw) * g.off;
+  P.vel.copy(r.dir).multiplyScalar(g.s);
+  if (g.t > 1 || g.t < 0) leaveRail(1.2);
+}
+
+function bailStep(dt){
+  P.bailT += dt;
+  P.vel.x *= Math.exp(-2.5 * dt); P.vel.z *= Math.exp(-2.5 * dt);
+  P.vel.y -= G * dt;
+  P.pos.y += P.vel.y * dt;
+  moveHoriz(dt, P.pos.y, 0.35);
+  const h = heightAt(P.pos.x, P.pos.z);
+  if (P.pos.y <= h){ P.pos.y = h; P.vel.y = 0; }
+  if (P.bailT > 1.7){
+    P.state = 'ride'; P.vel.multiplyScalar(0.2);
+    P.sN.set(0, 1, 0);
+    if (gradAt(P.pos.x, P.pos.z).slope > 0.6){ // got stuck on a wall: slide down to the flat
+      const gg = _grad; P.pos.x -= gg.x / gg.slope * 1.5; P.pos.z -= gg.z / gg.slope * 1.5; P.pos.y = heightAt(P.pos.x, P.pos.z);
+    }
+  }
+}
+
+function step(dt){
+  if (P.landSquash > 0) P.landSquash = Math.max(0, P.landSquash - dt * 1.8);
+  if (P.state === 'ride') rideStep(dt);
+  else if (P.state === 'air') airStep(dt);
+  else if (P.state === 'grind') grindStep(dt);
+  else bailStep(dt);
+}
+
+/* ---------- pose ---------- */
+const qTilt = new THREE.Quaternion(), qYaw = new THREE.Quaternion(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), qc = new THREE.Quaternion();
+const AX_X = new V3(1, 0, 0), AX_Z = new V3(0, 0, 1);
+function pose(S, Q, dt){
+  const {root, boardPivot, riderG, rig, torsoG, headG, anim} = S;
+  // root orientation
+  const targetN = (Q.state === 'ride' || Q.state === 'bail') ? Q.N : Y;
+  const rate = Q.state === 'ride' ? 18 : (Q.state === 'grind' ? 20 : 3.5);
+  Q.sN.lerp(targetN, Math.min(1, rate * dt)).normalize();
+  qTilt.setFromUnitVectors(Y, Q.sN);
+  qYaw.setFromAxisAngle(Y, Q.yaw);
+  root.quaternion.copy(qTilt).multiply(qYaw);
+  root.position.copy(Q.pos);
+
+  // trick rotation
+  let p = 0, flipLift = 0, rx = 0, ry = 0, rz = 0;
+  if (Q.trick){
+    p = Q.trickP; const e = 1 - Math.pow(1 - p, 2.2);
+    rx = (Q.trick.x || 0) * TAU * e; ry = (Q.trick.y || 0) * TAU * e; rz = (Q.trick.z || 0) * TAU * e;
+    flipLift = Math.sin(Math.PI * p);
+  }
+  anim.pitch *= Math.exp(-7 * dt);
+  const liftT = Q.grabbing ? 0.34 : flipLift * 0.14 + (Q.state === 'air' ? 0.04 : 0);
+  anim.boardLift += (liftT - anim.boardLift) * Math.min(1, 14 * dt);
+
+  let crouchT = 0.1;
+  if (Q.charging) crouchT = 0.35 + 0.65 * Math.min(1, Q.charge / CHARGE_MAX);
+  if (Q.state === 'air') crouchT = Q.grabbing ? 1 : 0.5 + flipLift * 0.3;
+  if (Q.state === 'grind') crouchT = 0.45;
+  if (Q.pushing) crouchT = 0.55;
+  crouchT += Q.landSquash;
+  anim.crouch += (crouchT - anim.crouch) * Math.min(1, 12 * dt);
+  const c = clamp(anim.crouch, 0, 1.1);
+
+  if (Q.state === 'bail'){
+    const k = clamp(Q.bailT / 0.45, 0, 1), ke = 1 - Math.pow(1 - k, 3);
+    riderG.rotation.set(0, 0, Q.bailSide * 1.45 * ke);
+    boardPivot.position.set(0, 0.07 + Math.sin(k * Math.PI) * 0.4, 1.3 * ke);
+    boardPivot.rotation.set(0, ke * 2.5, ke * Math.PI * 2 * Q.bailSide);
+  }
+  // manual: nose up, tail wheels on the ground (tail = the trailing end, so fakie flips it)
+  anim.manual += ((Q.manual && Q.state === 'ride' ? 1 : 0) - anim.manual) * Math.min(1, 12 * dt);
+  const mSgn = Q.fakie ? -1 : 1;
+  const mBal = Q.manual ? Q.manual.bal : 0;
+  const phi = -mSgn * anim.manual * Math.max(0.05, 0.26 - mBal * 0.13);
+  const zTail = -0.22 * mSgn;
+  const mLift = anim.manual > 0.001 ? -0.04 + 0.04 * Math.cos(phi) + zTail * Math.sin(phi) : 0;
+  anim.gPitch += ((Q.state === 'grind' && Q.grind ? Q.grind.k.pitch : 0) - anim.gPitch) * Math.min(1, 14 * dt);
+  const phiB = phi + anim.pitch + anim.gPitch;   // total board pitch, so feet stay glued to the deck
+  if (Q.state !== 'bail'){
+    riderG.rotation.set(0, 0, -anim.lean);
+    boardPivot.position.set(0, 0.07 + anim.boardLift + mLift, 0);
+    qa.setFromAxisAngle(Y, ry); qb.setFromAxisAngle(AX_X, rx + phiB); qc.setFromAxisAngle(AX_Z, rz);
+    boardPivot.quaternion.copy(qa).multiply(qb).multiply(qc);
+  }
+
+  const hipY = 0.96 - 0.42 * c;
+  const tuck = flipLift * 0.13;
+  const bail = Q.state === 'bail';
+  const hipZ = -0.07 * mSgn * anim.manual;
+  const deckY = z => 0.07 + anim.boardLift + mLift + 0.038 * Math.cos(phiB) - z * Math.sin(phiB);
+
+  // ollie: back foot snaps the tail, front foot drags up the grip toward the nose
+  anim.popT += dt;
+  const pu = anim.popT / 0.4;
+  const snap = pu < 1 ? clamp(pu * 5, 0, 1) * (1 - clamp((pu - 0.5) * 2, 0, 1)) : 0;
+  const drag = pu < 1 ? clamp((pu - 0.08) / 0.4, 0, 1) * (1 - clamp((pu - 0.7) / 0.3, 0, 1)) : 0;
+  // flip tricks: the foot flicks off the edge early in the trick, then both feet tuck
+  let fl = 0;
+  if (Q.trick){ const q = Q.trickP / 0.4; fl = q < 1 ? Math.sin(Math.PI * q) : 0; }
+  const tf = (Q.trick && Q.trick.ff) || ZERO3, tb = (Q.trick && Q.trick.bf) || ZERO3;
+  // stance: front foot angled toward the nose over the front bolts, back foot across the tail
+  const FOOT = [{x:0.04, z:0.18, yaw:-0.38}, {x:0.0, z:-0.21, yaw:0.1}];
+  const manTail = anim.manual * 0.09;
+  for (let i = 0; i < 2; i++){
+    const s = i === 0 ? 1 : -1, f = FOOT[i], t = i === 0 ? tf : tb;
+    let fz = f.z, fy = 0, fx = f.x;
+    if (i === 0){ fz += 0.13 * drag + (mSgn < 0 ? manTail : 0); fy += 0.05 * drag; }
+    else { fz -= 0.1 * snap + (mSgn > 0 ? manTail : 0); }
+    fx += t[0] * fl; fy += t[1] * fl; fz += t[2] * fl;
+    P_hip[i].set(-0.02, hipY, hipZ + s * 0.1);
+    P_foot[i].set(fx, deckY(fz) + fy + tuck + (bail ? 0.1 : 0), fz);
+    footYaw[i] = f.yaw; footPitch[i] = phiB;
+  }
+  const topY = 0.11 + anim.boardLift;
+
+  // pushing: front foot turns to point down the board, back foot steps off and strokes the ground
+  anim.push += ((Q.pushing && Q.state === 'ride' ? 1 : 0) - anim.push) * Math.min(1, 10 * dt);
+  if (anim.push > 0.01){
+    const w = anim.push, sgn = Q.fakie ? -1 : 1, pi = Q.fakie ? 0 : 1, si = 1 - pi;
+    const ph = Q.pushPhase % 1;
+    let px, py, pz;
+    if (ph < 0.18){ const k = ph / 0.18; px = 0.2 * k; pz = sgn * (-0.2 + 0.32 * k); py = deckY(pz) * (1 - k) + 0.1 * Math.sin(Math.PI * k); }
+    else if (ph < 0.68){ const k = (ph - 0.18) / 0.5; px = 0.2; pz = sgn * (0.12 - 0.54 * k); py = 0.0; }
+    else { const k = (ph - 0.68) / 0.32; px = 0.2; pz = sgn * (-0.42 + 0.54 * k); py = 0.13 * Math.sin(Math.PI * k); }
+    P_foot[pi].x += (px - P_foot[pi].x) * w; P_foot[pi].y += (py - P_foot[pi].y) * w; P_foot[pi].z += (pz - P_foot[pi].z) * w;
+    P_hip[pi].x += 0.05 * w;
+    const pointYaw = -sgn * 1.25;
+    footYaw[pi] += (pointYaw - footYaw[pi]) * w; footPitch[pi] *= 1 - w;
+    P_foot[si].x += (0.02 - P_foot[si].x) * w; P_foot[si].z += (sgn * 0.14 - P_foot[si].z) * w; P_foot[si].y = deckY(P_foot[si].z);
+    footYaw[si] += (pointYaw - footYaw[si]) * w;
+  }
+  for (let i = 0; i < 2; i++){
+    ik(P_hip[i], P_foot[i], 0.46, 0.46, KNEE, P_knee[i]);
+    setBetween(rig.thigh[i], P_hip[i], P_knee[i]);
+    setBetween(rig.shin[i], P_knee[i], P_foot[i]);
+    rig.knee[i].position.copy(P_knee[i]);
+    const yw = footYaw[i];
+    rig.shoe[i].rotation.set(footPitch[i], yw, 0);
+    rig.shoe[i].position.set(P_foot[i].x + 0.03 * Math.cos(yw), P_foot[i].y + 0.045, P_foot[i].z - 0.03 * Math.sin(yw));
+  }
+  const th = 0.12 + 0.42 * Math.min(1, c) - 0.08 * anim.manual;
+  const psi = -mSgn * anim.manual * (0.28 - mBal * 0.25);   // lean toward the tail, more when tipping back
+  torsoG.position.set(-0.02, hipY, hipZ); torsoG.rotation.set(psi, 0, -th);
+  const ux = Math.sin(th), uy = Math.cos(th) * Math.cos(psi), uz = Math.cos(th) * Math.sin(psi);
+  const sx = -0.02 + ux * 0.47, sy = hipY + uy * 0.47, sz = hipZ + uz * 0.47;
+  headG.position.set(-0.02 + ux * 0.74, hipY + uy * 0.74, hipZ + uz * 0.74);
+  headG.rotation.set(psi * 0.5, (Q.fakie ? 0.85 : -0.85), -th * 0.4);
+  const airUp = Q.state === 'air' ? 0.28 : (Q.state === 'grind' ? 0.18 : 0.22 * anim.manual);
+  for (let i = 0; i < 2; i++){
+    const s = i === 0 ? 1 : -1;
+    P_sh[i].set(sx, sy, sz + s * 0.2);
+    const wob = Q.state === 'grind' ? s * anim.lean * 0.4 : s * mBal * 0.25 * anim.manual;
+    P_hand[i].set(-0.02 + (i ? -0.04 : 0.04), sy - 0.42 + airUp + wob, sz + s * 0.6);
+  }
+  if (Q.grabbing) P_hand[1].set(0.13, topY + 0.03, 0.0);
+  for (let i = 0; i < 2; i++){
+    ik(P_sh[i], P_hand[i], 0.29, 0.28, ELBOW, P_elb[i]);
+    setBetween(rig.upper[i], P_sh[i], P_elb[i]);
+    setBetween(rig.sleeve[i], P_sh[i], _t2.lerpVectors(P_sh[i], P_elb[i], 0.5));
+    rig.elbow[i].position.copy(P_elb[i]);
+    setBetween(rig.fore[i], P_elb[i], P_hand[i]);
+    rig.hand[i].position.copy(P_hand[i]);
+  }
+}
+
+/* ---------- online play (PeerJS / WebRTC, no accounts) ----------
+   The room creator is the host: everyone connects to the host, the host relays.
+   Each player sends their own state ~20x a second; others draw them as extra skaters. */
+const ROOM_PREFIX = 'sunset-skatepark-v1-';
+const SHIRTS = [0xeaa3d3, 0x56b4e9, 0xffb12e, 0x6fd08c, 0xc49bff, 0xff7a5c];
+const HAIRS = [0x121318, 0x3b2416, 0x6b4a2b, 0x121318];
+const NET = {peer:null, role:'off', code:'', conns:new Map(), hostConn:null, myId:'', name:'', color:SHIRTS[0], remotes:new Map(), timer:0};
+const STATES = new Set(['ride', 'air', 'grind', 'bail']);
+for (const k in TRICKS) TRICKS[k].code = k;
+const netOk = () => typeof window.Peer === 'function';
+function netStatus(msg, bad){ const el = $($('menuJoin').hidden ? 'netMsg' : 'joinMsg'); el.textContent = msg; el.classList.toggle('bad', !!bad); }
+function netError(e){
+  const t = e && e.type;
+  if (t === 'peer-unavailable') netStatus('その部屋コードは見つかりません。コードを確かめてください。', true);
+  else if (t === 'network' || t === 'server-error' || t === 'socket-error' || t === 'socket-closed')
+    netStatus('通信サーバーにつながりません。この表示(Claudeのページ)ではオンラインは使えないので、ダウンロードしたファイルかWebサイト版で開いてください。', true);
+  else if (t === 'browser-incompatible') netStatus('このブラウザはオンライン対戦に対応していません。Chromeで開いてください。', true);
+  else netStatus('接続できませんでした(' + (t || 'unknown') + ')。もう一度試してください。', true);
+  setLobbyBusy(false);
+}
+function setLobbyBusy(b){ for (const id of ['hostBtn', 'joinBtn', 'toJoinBtn', 'claudeJoinBtn']) $(id).disabled = b; }
+function myName(){
+  const n = ($('nameIn').value || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 12) || 'スケーター';
+  try { localStorage.setItem('skatepark-name', n); } catch (e){}
+  return n;
+}
+function randCode(){ const a = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 5; i++) s += a[Math.floor(Math.random() * a.length)]; return s; }
+
+function hostRoom(){
+  if (!netOk()) return netStatus('オンライン用の部品を読み込めませんでした。インターネット接続を確かめてください。', true);
+  setLobbyBusy(true); netStatus('部屋を作っています…');
+  const code = randCode();
+  const peer = new Peer(ROOM_PREFIX + code, {debug:0});
+  peer.on('open', id => {
+    Object.assign(NET, {peer, role:'host', code, myId:id, color:SHIRTS[0]});
+    enterOnline();
+  });
+  peer.on('connection', conn => {
+    conn.on('open', () => {
+      if (NET.conns.size >= 3){ conn.send({t:'full'}); setTimeout(() => conn.close(), 400); return; }
+      NET.conns.set(conn.peer, conn);
+    });
+    conn.on('data', d => {
+      if (!d || typeof d !== 'object' || !NET.conns.has(conn.peer)) return;
+      d.id = conn.peer;                    // stamp the sender: nobody can speak for someone else
+      handleMsg(d);
+      for (const [id, c] of NET.conns) if (id !== conn.peer && c.open) c.send(d);
+    });
+    conn.on('close', () => {
+      if (!NET.conns.delete(conn.peer)) return;
+      dropRemote(conn.peer, true);
+      for (const c of NET.conns.values()) if (c.open) c.send({t:'bye', id:conn.peer});
+    });
+  });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id' && NET.role === 'off'){ peer.destroy(); setLobbyBusy(false); hostRoom(); return; }
+    if (NET.role === 'off'){ peer.destroy(); netError(e); }
+  });
+  peer.on('disconnected', () => { if (NET.role === 'host') try { peer.reconnect(); } catch (e){} });
+}
+
+function joinRoom(){
+  const code = ($('codeIn').value || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{5}$/.test(code)) return netStatus('部屋コードは5文字です。', true);
+  if (!netOk()) return netStatus('オンライン用の部品を読み込めませんでした。インターネット接続を確かめてください。', true);
+  setLobbyBusy(true); netStatus('部屋 ' + code + ' に入っています…');
+  const peer = new Peer({debug:0});
+  peer.on('open', id => {
+    const conn = peer.connect(ROOM_PREFIX + code, {reliable:true, serialization:'json'});
+    const to = setTimeout(() => { if (!conn.open){ peer.destroy(); netStatus('つながりませんでした。部屋コードを確かめるか、ホストにもう一度部屋を作ってもらってください。', true); setLobbyBusy(false); } }, 15000);
+    conn.on('open', () => {
+      clearTimeout(to);
+      Object.assign(NET, {peer, role:'client', code, myId:id, hostConn:conn, color:SHIRTS[1 + Math.floor(Math.random() * (SHIRTS.length - 1))]});
+      enterOnline();
+    });
+    conn.on('data', d => {
+      if (!d || typeof d !== 'object') return;
+      if (d.t === 'full'){ peer.destroy(); NET.role = 'off'; netStatus('この部屋は満員です(最大4人)。', true); setLobbyBusy(false); return; }
+      handleMsg(d);
+    });
+    conn.on('close', () => { if (NET.role === 'client'){ popup('部屋が閉じられました', 'bad', 'ホストが抜けたので、ひとりで滑りを続けます'); goOffline(); } });
+  });
+  peer.on('error', e => { if (NET.role === 'off'){ peer.destroy(); netError(e); } });
+}
+
+function enterOnline(){
+  NET.name = myName();
+  NET.timer = setInterval(sendState, 50);
+  $('netHud').hidden = false;
+  $('netLabel').textContent = NET.role === 'claude' ? 'オンライン' : '部屋コード';
+  $('roomCode').textContent = NET.role === 'claude' ? 'このページ' : NET.code;
+  renderBoard();
+  if (NET.role === 'host'){
+    // show the code big first so it can be shared; skating starts on the host's say-so
+    $('roomBig').textContent = NET.code;
+    setLobbyBusy(false);
+    showScreen('menuRoom');
+    return;
+  }
+  startGame();
+  popup('部屋に入りました', 'good', 'みんなと同じパークにいます');
+}
+function goOffline(){
+  clearInterval(NET.timer);
+  if (NET.role === 'claude' && ROOM) ROOM.presence({s:null, ev:null}).catch(() => {});   // vanish from the others' park
+  try { NET.peer && NET.peer.destroy(); } catch (e){}
+  for (const id of [...NET.remotes.keys()]) dropRemote(id);
+  Object.assign(NET, {peer:null, role:'off', hostConn:null}); NET.conns.clear();
+  $('netHud').hidden = true;
+}
+function netSend(msg){
+  if (NET.role === 'host'){ msg.id = NET.myId; for (const c of NET.conns.values()) if (c.open) c.send(msg); }
+  else if (NET.role === 'client' && NET.hostConn && NET.hostConn.open) NET.hostConn.send(msg);
+  else if (NET.role === 'claude' && ROOM){
+    // inside Claude everything rides on presence (anyone on the page may set it): state as `s`,
+    // events as a short numbered list `ev` so a burst (ollie + kickflip) is not lost to coalescing
+    if (msg.t === 's') ROOM.presence({s:msg}).catch(() => {});
+    else if (msg.t === 'ev'){
+      const e = Object.assign({q:++CL.seq}, msg); delete e.t;
+      CL.evs.push(e); if (CL.evs.length > 6) CL.evs.shift();
+      ROOM.presence({ev:CL.evs}).catch(() => {});
+    }
+  }
+}
+
+/* ---------- online inside Claude: everyone who has this page open shares one park ---------- */
+const inClaude = !!(window.claude && typeof window.claude.use === 'function');
+let ROOM = null;
+const CL = {seq:0, evs:[], seen:new Map()};
+const roomReady = inClaude ? window.claude.use('room').then(r => r, () => null) : Promise.resolve(null);
+roomReady.then(room => {
+  if (!room) return;
+  ROOM = room;
+  room.onPeers(ch => {
+    updateWho(ch.peers);
+    if (NET.role !== 'claude') return;
+    for (const p of ch.left) dropRemote(p.peer, true);
+    for (const p of ch.joined) claudePeer(p);
+    for (const p of ch.updated) claudePeer(p);
+  }, () => {
+    ROOM = null; updateWho([]);
+    if (NET.role === 'claude'){ popup('通信が切れました', 'bad', 'ひとりで滑りを続けます'); goOffline(); }
+  });
+});
+function updateWho(peers){
+  const el = $('claudeWho'); if (!el) return;
+  const people = peers.filter(p => p.kind === 'viewer');
+  const skating = people.filter(p => !p.sameTab && p.presence && p.presence.s).length;
+  el.textContent = ROOM ? `いまこのページを開いている人:${people.length}人(あなたを含む)・パークで滑っている人:${skating}人` : '';
+}
+function claudePeer(p){
+  if (p.sameTab || p.kind !== 'viewer') return;
+  const pr = p.presence || {};
+  if (!pr.s || typeof pr.s !== 'object'){ if (NET.remotes.has(p.peer)) dropRemote(p.peer, true); return; }
+  handleMsg(Object.assign({}, pr.s, {t:'s', id:p.peer}));
+  const evs = Array.isArray(pr.ev) ? pr.ev : [];
+  const newest = evs.reduce((m, e) => Math.max(m, e && typeof e.q === 'number' ? e.q : 0), 0);
+  if (!CL.seen.has(p.peer)){ CL.seen.set(p.peer, newest); return; }   // first sight: don't replay old call-outs
+  const last = CL.seen.get(p.peer);
+  for (const e of evs) if (e && typeof e.q === 'number' && e.q > last) handleMsg(Object.assign({}, e, {t:'ev', id:p.peer}));
+  CL.seen.set(p.peer, Math.max(last, newest));
+}
+function claudeJoin(){
+  setLobbyBusy(true); netStatus('つないでいます…');
+  roomReady.then(room => {
+    if (!room || !ROOM){
+      netStatus('この表示ではClaudeのリアルタイム通信が使えません。claude.aiにログインして、共有されたURLから開いてください。', true);
+      setLobbyBusy(false); return;
+    }
+    Object.assign(NET, {role:'claude', code:'', myId:'me', color:SHIRTS[Math.floor(Math.random() * SHIRTS.length)]});
+    CL.seq = 0; CL.evs = []; CL.seen.clear();
+    enterOnline();
+    for (const p of ROOM.peers()) claudePeer(p);   // whoever is already skating
+    setLobbyBusy(false);
+  });
+}
+function netEvent(ev){ if (NET.role !== 'off') netSend(Object.assign({t:'ev'}, ev)); }
+const r3 = v => Math.round(v * 1000) / 1000;
+function sendState(){
+  if (NET.role === 'off') return;
+  netSend({t:'s', n:NET.name, c:NET.color, cid:myChar.id, sc:score,
+    x:r3(P.pos.x), y:r3(P.pos.y), z:r3(P.pos.z), vx:r3(P.vel.x), vy:r3(P.vel.y), vz:r3(P.vel.z),
+    yw:r3(P.yaw), st:P.state, nx:r3(P.N.x), ny:r3(P.N.y), nz:r3(P.N.z),
+    tk:P.trick ? P.trick.code : '', tp:r3(P.trickP), gb:P.grabbing ? 1 : 0, ch:P.charging ? 1 : 0, cg:r3(P.charge),
+    pu:P.pushing ? 1 : 0, pp:r3(P.pushPhase % 1), ls:r3(P.landSquash), mb:P.manual ? r3(P.manual.bal) : null,
+    fk:P.fakie ? 1 : 0, gk:P.grind ? P.grind.key : '', bt:r3(P.bailT), bs:P.bailSide, ln:r3(anim.lean), pt:r3(Math.min(9, anim.popT))});
+}
+
+/* name tags and trick call-outs drawn on little canvases */
+function textSprite(w, h, sx, sy){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
+  sp.scale.set(sx, sy, 1); sp.renderOrder = 10; scene.add(sp);
+  return {c, g:c.getContext('2d'), tex, sp};
+}
+function drawText(T, text, color, size){
+  const {g, c} = T; g.clearRect(0, 0, c.width, c.height);
+  const font = s => `${s}px "Dela Gothic One", "Hiragino Kaku Gothic ProN", sans-serif`;
+  g.font = font(size);
+  while (size > 14 && g.measureText(text).width > c.width * 0.92){ size -= 2; g.font = font(size); }   // long lines shrink to fit
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = size * 0.22; g.strokeStyle = 'rgba(20,14,36,.85)'; g.strokeText(text, c.width / 2, c.height / 2);
+  g.fillStyle = color; g.fillText(text, c.width / 2, c.height / 2);
+  T.tex.needsUpdate = true;
+}
+const hex = n => '#' + n.toString(16).padStart(6, '0');
+
+function addRemote(id, d){
+  const color = SHIRTS.includes(d.c) ? d.c : SHIRTS[1];
+  const ch = charById(d.cid);
+  const S = makeSkater(ch);
+  const Q = {pos:new V3(+d.x || 0, +d.y || 0, +d.z || 0), yaw:+d.yw || 0, state:'ride', N:new V3(0, 1, 0), sN:new V3(0, 1, 0),
+    trick:null, trickP:0, grabbing:false, charging:false, charge:0, pushing:false, pushPhase:0, landSquash:0,
+    manual:null, fakie:false, grind:null, bailT:0, bailSide:1};
+  const R = {id, S, Q, color, cid:ch.id, name:'', score:0, target:Q.pos.clone(), vel:new V3(), yawT:Q.yaw, recv:performance.now(), last:performance.now(),
+    tag:textSprite(256, 64, 1.7, 0.42), call:textSprite(512, 96, 2.8, 0.52), callT:0};
+  R.call.sp.material.opacity = 0;
+  NET.remotes.set(id, R);
+  return R;
+}
+function dropRemote(id, announce){
+  const R = NET.remotes.get(id); if (!R) return;
+  scene.remove(R.S.root, R.tag.sp, R.call.sp);
+  NET.remotes.delete(id);
+  if (announce && R.name) popup(R.name + ' が抜けました');
+  renderBoard();
+}
+function handleMsg(d){
+  if (typeof d.id !== 'string' || d.id === NET.myId) return;
+  if (d.t === 'bye'){ dropRemote(d.id, true); return; }
+  let R = NET.remotes.get(d.id);
+  if (d.t === 's'){
+    const fresh = !R;
+    if (!R) R = addRemote(d.id, d);
+    const num = (v, a, b, def) => { v = Number(v); return Number.isFinite(v) ? clamp(v, a, b) : def; };
+    const name = String(d.n || '').slice(0, 12) || 'スケーター';
+    if (name !== R.name){ R.name = name; drawText(R.tag, name, hex(R.color), 34); if (fresh) popup(name + ' が来ました', 'good'); renderBoard(); }
+    if (SHIRTS.includes(d.c) && d.c !== R.color){ R.color = d.c; drawText(R.tag, R.name, hex(R.color), 34); renderBoard(); }
+    if (typeof d.cid === 'string' && d.cid !== R.cid){   // they picked another character: rebuild their skater
+      const ch = charById(d.cid); scene.remove(R.S.root); R.S = makeSkater(ch); R.cid = ch.id;
+    }
+    const sc = num(d.sc, 0, 1e9, 0); if (sc !== R.score){ R.score = sc; renderBoard(); }
+    const Q = R.Q, now = performance.now();
+    R.target.set(num(d.x, -60, 60, 0), num(d.y, -5, 20, 0), num(d.z, -60, 60, 0));
+    R.vel.set(num(d.vx, -30, 30, 0), num(d.vy, -30, 30, 0), num(d.vz, -30, 30, 0));
+    if (Q.pos.distanceTo(R.target) > 4) Q.pos.copy(R.target);
+    R.yawT = num(d.yw, -1e4, 1e4, 0); R.recv = now; R.last = now;
+    Q.state = STATES.has(d.st) ? d.st : 'ride';
+    Q.N.set(num(d.nx, -1, 1, 0), num(d.ny, -1, 1, 1), num(d.nz, -1, 1, 0)); if (Q.N.lengthSq() < 0.01) Q.N.set(0, 1, 0); Q.N.normalize();
+    Q.trick = Object.prototype.hasOwnProperty.call(TRICKS, d.tk) ? TRICKS[d.tk] : null;
+    Q.trickP = num(d.tp, 0, 1, 0);
+    Q.grabbing = !!d.gb; Q.charging = !!d.ch; Q.charge = num(d.cg, 0, 5, 0);
+    Q.pushing = !!d.pu; Q.pushPhase = num(d.pp, 0, 1, 0); Q.landSquash = num(d.ls, 0, 1, 0);
+    Q.manual = d.mb === null || d.mb === undefined ? null : {bal:num(d.mb, -1.5, 1.5, 0)};
+    Q.fakie = !!d.fk;
+    Q.grind = Object.prototype.hasOwnProperty.call(GRINDS, d.gk) ? {k:GRINDS[d.gk]} : null;
+    Q.bailT = num(d.bt, 0, 10, 0); Q.bailSide = d.bs < 0 ? -1 : 1;
+    R.S.anim.lean = num(d.ln, -2, 2, 0);
+    const pt = num(d.pt, 0, 9, 9);
+    if (pt < 0.4 && pt < R.S.anim.popT - 0.05){ R.S.anim.popT = pt; R.S.anim.pitch = -0.55 * Math.exp(-7 * pt); }
+  } else if (d.t === 'ev' && R){
+    if (d.k === 'item') callout(R, String(d.n || '').slice(0, 24), '#fff4e6');
+    else if (d.k === 'land'){ const pts = clamp(Number(d.p) || 0, 0, 1e8); callout(R, '+' + Math.round(pts).toLocaleString(), '#ffb12e'); if (pts >= 60) cheer(0.75 * clamp((Math.log10(pts) - 1.7) / 1.9, 0.05, 1)); }
+    else if (d.k === 'bail'){ callout(R, charById(R.cid).bail, '#ff5470'); }
+  }
+}
+function callout(R, text, color){ drawText(R.call, text, color, 46); R.callT = 1.3; }
+function updateRemotes(dt){
+  if (!NET.remotes.size) return;
+  const now = performance.now();
+  for (const R of [...NET.remotes.values()]){
+    if (now - R.last > 6000){ dropRemote(R.id, true); continue; }
+    const Q = R.Q, ahead = Math.min(0.15, (now - R.recv) / 1000);
+    _t2.copy(R.target).addScaledVector(R.vel, ahead);
+    Q.pos.lerp(_t2, Math.min(1, 14 * dt));
+    Q.yaw += wrap(R.yawT - Q.yaw) * Math.min(1, 16 * dt);
+    if (Q.trick) Q.trickP = Math.min(1, Q.trickP + dt / Q.trick.dur);
+    if (Q.pushing) Q.pushPhase = (Q.pushPhase + dt / 0.72) % 1;
+    if (Q.state === 'bail') Q.bailT += dt;
+    pose(R.S, Q, dt);
+    R.tag.sp.position.set(Q.pos.x, Q.pos.y + 2.05, Q.pos.z);
+    R.call.sp.position.set(Q.pos.x, Q.pos.y + 2.55 + (1.3 - R.callT) * 0.3, Q.pos.z);
+    if (R.callT > 0){ R.callT -= dt; R.call.sp.material.opacity = clamp(R.callT / 0.4, 0, 1); }
+  }
+}
+function renderBoard(){
+  const rows = [{name:NET.name || 'あなた', score, color:NET.color, me:true}];
+  for (const R of NET.remotes.values()) rows.push({name:R.name, score:R.score, color:R.color});
+  rows.sort((a, b) => b.score - a.score);
+  for (const list of [$('board'), $('lobbyBoard')]){
+    list.textContent = '';
+    for (const r of rows){
+      const li = document.createElement('li');
+      const dot = document.createElement('i'); dot.style.background = hex(r.color);
+      const nm = document.createElement('span'); nm.textContent = r.name + (r.me ? '(あなた)' : '');
+      const sc = document.createElement('b'); sc.textContent = Math.round(r.score).toLocaleString();
+      li.append(dot, nm, sc); list.append(li);
+    }
+  }
+  $('playerCount').textContent = rows.length + '人';
+}
+
+/* start-screen navigation: main menu → online → (make a room | join with a code) */
+function showScreen(id){
+  for (const s of document.querySelectorAll('#start .screen')) s.hidden = s.id !== id;
+  for (const m of ['netMsg', 'joinMsg']){ $(m).textContent = ''; $(m).classList.remove('bad'); }
+  charView = id === 'menuChar';
+  $('start').classList.toggle('charmode', charView);
+  const focus = {menuMain:'go', menuOnline:'nameIn', menuJoin:'codeIn', menuRoom:'startRoomBtn', menuChar:'charOk'}[id];
+  if (focus) setTimeout(() => $(focus).focus(), 0);
+}
+
+/* character select: picking a card swaps your skater right away; the camera circles them */
+let charView = false, charOrbit = 0;
+// drag anywhere above the panel (mouse or finger) to turn the skater a full 360°; ← → keys work too
+const charDrag = {on:false, x:0, idle:0};
+$('start').addEventListener('pointerdown', e => {
+  if (!charView || e.target !== $('start')) return;
+  charDrag.on = true; charDrag.x = e.clientX; charDrag.idle = 3;
+  try { $('start').setPointerCapture(e.pointerId); } catch (err){}
+  $('start').classList.add('dragging');
+});
+$('start').addEventListener('pointermove', e => {
+  if (!charDrag.on) return;
+  charOrbit -= (e.clientX - charDrag.x) * 0.012; charDrag.x = e.clientX;
+});
+for (const ev of ['pointerup', 'pointercancel']) $('start').addEventListener(ev, () => { charDrag.on = false; charDrag.idle = 3; $('start').classList.remove('dragging'); });
+function applyChar(ch){
+  myChar = ch;
+  try { localStorage.setItem('skatepark-char', ch.id); } catch (e){}
+  scene.remove(ME.root);
+  const S = makeSkater(ch); S.anim = anim;   // keep the shared animation state the physics writes to
+  ME = S;
+  $('charNow').textContent = ch.name;
+}
+function renderChars(){
+  const list = $('charList'); list.textContent = '';
+  for (const ch of CHARS){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'charcard'; b.setAttribute('aria-pressed', String(ch === myChar));
+    const nm = document.createElement('span'); nm.className = 'cn'; nm.textContent = ch.name;
+    const tg = document.createElement('span'); tg.className = 'ct'; tg.textContent = ch.tag;
+    const sw = document.createElement('span'); sw.className = 'sw';
+    for (const c of [ch.shirt, ch.pants, ch.hatColor || ch.hair]){ const i = document.createElement('i'); i.style.background = hex(c); sw.append(i); }
+    b.append(nm, sw, tg);
+    b.addEventListener('click', () => { applyChar(ch); renderChars(); list.querySelectorAll('.charcard')[CHARS.indexOf(ch)].focus(); });
+    list.append(b);
+  }
+  $('charDesc').textContent = myChar.desc;
+}
+$('charNow').textContent = myChar.name;
+$('charBtn').addEventListener('click', () => { renderChars(); showScreen('menuChar'); });
+$('charOk').addEventListener('click', () => showScreen('menuMain'));
+try { $('nameIn').value = localStorage.getItem('skatepark-name') || ''; } catch (e){}
+$('onlineBtn').addEventListener('click', () => { initAudio(); showScreen('menuOnline'); });
+$('toJoinBtn').addEventListener('click', () => { myName(); showScreen('menuJoin'); });
+for (const b of document.querySelectorAll('#start .back')) b.addEventListener('click', () => { if (NET.role === 'off') setLobbyBusy(false); showScreen(b.dataset.back); });
+$('hostBtn').addEventListener('click', hostRoom);
+// opened inside Claude: the room-code version can't reach its server there, so offer the page's own shared park instead
+if (inClaude){
+  $('claudeBlock').hidden = false; $('peerModes').hidden = true;
+  document.querySelector('#onlineBtn .mode-s').textContent = 'このページを開いている人と一緒に滑る';
+}
+$('claudeJoinBtn').addEventListener('click', claudeJoin);
+$('joinBtn').addEventListener('click', joinRoom);
+$('startRoomBtn').addEventListener('click', startGame);
+$('copyCode').addEventListener('click', () => {
+  const done = () => { $('copyCode').textContent = 'コピーしました'; setTimeout(() => $('copyCode').textContent = 'コピー', 1600); };
+  try { navigator.clipboard.writeText(NET.code).then(done, () => window.getSelection().selectAllChildren($('roomBig'))); }
+  catch (e){ window.getSelection().selectAllChildren($('roomBig')); }
+});
+$('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
+$('leaveBtn').addEventListener('click', () => { goOffline(); popup('オフラインに戻りました'); });
+addEventListener('pagehide', () => { try { NET.peer && NET.peer.destroy(); } catch (e){} });
+
+/* ---------- camera ---------- */
+const camState = {yaw:START.yaw, pos:new V3(), look:new V3(), init:false};
+function updateCamera(dt){
+  if (charView){   // character select: slow turntable around the skater, framed above the menu panel
+    if (!charDrag.on){ if (charDrag.idle > 0) charDrag.idle -= dt; else charOrbit += dt * 0.5; }   // spins by itself until you grab it
+    camera.position.set(P.pos.x + Math.sin(charOrbit) * 3.7, P.pos.y + 1.45, P.pos.z + Math.cos(charOrbit) * 3.7);
+    camera.lookAt(P.pos.x, P.pos.y + 0.3, P.pos.z);
+    camState.init = false;
+    return;
+  }
+  const hs = Math.hypot(P.vel.x, P.vel.z);
+  if ((P.state === 'ride' && hs > 1.5) || P.state === 'grind'){
+    const va = Math.atan2(P.vel.x, P.vel.z);
+    camState.yaw += wrap(va - camState.yaw) * Math.min(1, 3.2 * dt);
+  }
+  const dist = 5.6, height = 2.5;
+  const want = new V3(P.pos.x - Math.sin(camState.yaw) * dist, P.pos.y + height, P.pos.z - Math.cos(camState.yaw) * dist);
+  want.x = clamp(want.x, -(AX + DECK) + 0.4, AX + DECK - 0.4);
+  want.z = clamp(want.z, -(AZ + DECK) + 0.4, AZ + DECK - 0.4);
+  want.y = Math.max(want.y, heightAt(want.x, want.z) + 0.8);
+  const look = new V3(P.pos.x, P.pos.y + 1.0, P.pos.z);
+  if (!camState.init){ camState.pos.copy(want); camState.look.copy(look); camState.init = true; }
+  camState.pos.lerp(want, Math.min(1, 7 * dt));
+  camState.look.lerp(look, Math.min(1, 12 * dt));
+  camera.position.copy(camState.pos);
+  camera.lookAt(camState.look);
+}
+
+/* ---------- loop ---------- */
+function resize(){
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+let last = performance.now(), acc = 0;
+const H = 1 / 120;
+const scoreEl = $('score'), bestEl = $('best'), speedEl = $('speed'), chargeEl = $('charge'), chargeFill = chargeEl.querySelector('.fill');
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  acc += dt;
+  pollPad(); padButtons(); padSticks();
+  updateDust(dt); updateCrowd(dt); updateAudio(dt);
+  let n = 0;
+  while (acc >= H && n < 8){ step(H); acc -= H; n++; }
+  if (n === 8) acc = 0;
+  pose(ME, P, dt);
+  updateRemotes(dt);
+  updateCamera(dt);
+  scoreEl.textContent = score.toLocaleString();
+  bestEl.textContent = 'ベストコンボ ' + best.toLocaleString();
+  speedEl.firstChild.nodeValue = Math.round(P.vel.length() * 3.6);
+  chargeEl.hidden = !P.charging;
+  if (P.charging) chargeFill.style.width = Math.min(100, P.charge / CHARGE_MAX * 100) + '%';
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+function start(data){
+  if (data && typeof data.score === 'number') score = data.score;
+  P.pos.y = heightAt(P.pos.x, P.pos.z);
+  requestAnimationFrame(t => { last = t; frame(t); });
+}
+$('go').addEventListener('click', startGame);
+window.claude?.hot?.snapshot?.(() => ({score}));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+</body>
+</html>
