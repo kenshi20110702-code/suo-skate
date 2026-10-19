@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="すおのトリプルヒールフリップstory は、ブラウザで遊べる無料の3Dスケボーゲーム。キックフリップやグラインド、マニュアルをつないでコンボを決めよう。部屋コードで友達と最大4人のオンラインにも対応。キーボードとPS5コントローラーで遊べます。">
+<meta name="description" content="すおのトリプルヒールフリップstory は、ブラウザで遊べる無料の3Dスケボーゲーム。キックフリップやグラインド、マニュアルをつないでコンボを決めよう。京都・四条河原町の夜の町並み(先斗町・木屋町・鴨川・四条大橋)を滑れるマップも。部屋コードで友達と最大4人のオンラインにも対応。キーボードとPS5コントローラーで遊べます。">
 <link rel="canonical" href="https://kenshi20110702-code.github.io/suo-skate/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kenshi20110702-code.github.io/suo-skate/">
@@ -121,6 +121,11 @@ button:disabled{opacity:.45;cursor:default}
 .charpick-now b{font-family:var(--display);font-weight:400;color:var(--sun);margin-left:4px}
 #start.charmode{background:linear-gradient(to top,rgba(20,14,36,.94) 0%,rgba(20,14,36,.8) 38%,rgba(20,14,36,0) 62%);align-items:end}
 #start.charmode h1{display:none}
+#start.mapmode{background:linear-gradient(to top,rgba(20,14,36,.94) 0%,rgba(20,14,36,.8) 38%,rgba(20,14,36,0) 62%);align-items:end}
+#start.mapmode h1{display:none}
+.maps{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.maps{grid-template-columns:1fr}}
+.maps .charcard .cn{font-size:17px}
 #start.charmode{cursor:grab;touch-action:none}
 #start.charmode.dragging{cursor:grabbing}
 #start.charmode .card{cursor:default}
@@ -230,6 +235,19 @@ button:disabled{opacity:.45;cursor:default}
         <span class="charpick-l">キャラクター選択</span>
         <span class="charpick-now">いま:<b id="charNow">すお</b></span>
       </button>
+      <button id="mapBtn" type="button" class="charpick">
+        <span class="charpick-l">マップ選択</span>
+        <span class="charpick-now">いま:<b id="mapNow">サンセット・パーク</b></span>
+      </button>
+    </div>
+
+    <!-- map select: the map behind this panel is the one you'll skate; the camera flies around it -->
+    <div class="screen" id="menuMap" hidden>
+      <div class="maps" id="mapList" role="group" aria-label="マップ"></div>
+      <p class="char-desc" id="mapDesc"></p>
+      <p class="hint">オンラインの部屋では、部屋を作った人のマップでみんなが滑ります。</p>
+      <button id="mapOk" type="button" class="cta">このマップで決定</button>
+      <button type="button" class="back" data-back="menuMain">← もどる</button>
     </div>
 
     <!-- character select: the chosen skater spins on the board behind this panel -->
@@ -327,14 +345,16 @@ scene.background = canvasTex(4, 512, (g, w, h) => {
 });
 scene.fog = new THREE.Fog(0xe9927a, 55, 170);
 
-scene.add(new THREE.HemisphereLight(0xa8b6ff, 0x6b4636, 0.75));
+const hemi = new THREE.HemisphereLight(0xa8b6ff, 0x6b4636, 0.75);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffd0a0, 1.7);
 sun.position.set(-34, 30, -26);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, {left:-48, right:48, top:48, bottom:-48, near:1, far:140});
 sun.shadow.bias = -0.0006;
-scene.add(sun);
+scene.add(sun, sun.target);
+const parkSky = scene.background;
 
 function noiseTex(base, speck, lines){
   const t = canvasTex(512, 512, (g, w, h) => {
@@ -364,13 +384,29 @@ const mat = {
   railY: new THREE.MeshStandardMaterial({color:0xffb12e, metalness:0.5, roughness:0.35}),
 };
 
+/* ---------- maps: each one is a group of meshes plus its own collision (obstacles, rails) ---------- */
+const MAPS = {};
+let CUR = null, obstacles = [], rails = [];
+function useMap(m){ CUR = m; obstacles = m.obstacles; rails = m.rails; }
+function newMap(def){
+  const m = Object.assign({obstacles:[], rails:[], group:new THREE.Group()}, def);
+  scene.add(m.group); MAPS[m.id] = m; useMap(m); return m;
+}
+const put = (...o) => CUR.group.add(...o);   // add to the map being built
+const BLOCKED = 8;                            // height that reads as a wall (out of bounds, water, buildings)
+const PARK = newMap({
+  id:'park', name:'サンセット・パーク', desc:'夕焼けのスケートパーク。クォーターパイプ、ファンボックス、レールがそろった定番コース。',
+  base:(x, z) => (Math.abs(x) > AX + DECK - 0.02 || Math.abs(z) > AZ + DECK - 0.02) ? BLOCKED : 0,
+  bounds:{x0:-(AX + DECK), x1:AX + DECK, z0:-(AZ + DECK), z1:AZ + DECK},
+  start:{x:0, z:26, yaw:Math.PI}, view:{x:0, z:0, r:46, h:24},
+});
+
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(2 * (AX + DECK) + 2, 2 * (AZ + DECK) + 2), mat.ground);
-ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; put(ground);
 const outside = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color:0x4a3a48, roughness:1}));
-outside.rotation.x = -Math.PI / 2; outside.position.y = -0.02; scene.add(outside);
+outside.rotation.x = -Math.PI / 2; outside.position.y = -0.02; put(outside);
 
 /* ---------- terrain: heightfield built from extruded profiles ---------- */
-const obstacles = [];
 function addObs(o){
   o.c = Math.cos(o.a); o.s = Math.sin(o.a);
   o.u0 = o.pts[0][0]; o.u1 = o.pts[o.pts.length - 1][0];
@@ -381,7 +417,7 @@ function addObs(o){
 function obsHeight(o, x, z){
   const dx = x - o.x, dz = z - o.z;
   const u = dx * o.c - dz * o.s, w = dx * o.s + dz * o.c;
-  if (w > o.hw || w < -o.hw || u < o.u0 || u > o.u1) return 0;
+  if (w > o.hw || w < -o.hw || u < o.u0 || u > o.u1) return -Infinity;
   const p = o.pts;
   for (let i = 0; i < p.length - 1; i++){
     const a = p[i], b = p[i + 1];
@@ -391,11 +427,12 @@ function obsHeight(o, x, z){
       return a[1] + (b[1] - a[1]) * (u - a[0]) / span;
     }
   }
-  return 0;
+  return -Infinity;
 }
+// the map's own floor (it can dip below 0, e.g. a riverbank), raised by whatever obstacle is highest there
 function heightAt(x, z){
-  if (Math.abs(x) > AX + DECK - 0.02 || Math.abs(z) > AZ + DECK - 0.02) return 8;
-  let h = 0;
+  let h = CUR.base(x, z);
+  if (h >= BLOCKED) return h;
   for (let i = 0; i < obstacles.length; i++){ const v = obsHeight(obstacles[i], x, z); if (v > h) h = v; }
   return h;
 }
@@ -412,7 +449,8 @@ function gradAt(x, z){
 function normalAt(x, z, out){ const g = gradAt(x, z); return out.set(-g.x, 1, -g.z).normalize(); }
 
 function buildObs(o){
-  const raw = [[o.u0, 0], ...o.pts, [o.u1, 0]];
+  const fl = o.floor || 0;   // solid from here up to the profile
+  const raw = [[o.u0, fl], ...o.pts, [o.u1, fl]];
   const pts = raw.filter((p, i) => i === 0 || Math.abs(p[0] - raw[i-1][0]) > 1e-4 || Math.abs(p[1] - raw[i-1][1]) > 1e-4);
   const shape = new THREE.Shape(pts.map(p => new THREE.Vector2(p[0], p[1])));
   const geo = new THREE.ExtrudeGeometry(shape, {depth:o.hw * 2, bevelEnabled:false, steps:1});
@@ -420,7 +458,7 @@ function buildObs(o){
   const m = new THREE.Mesh(geo, o.mat);
   m.rotation.y = o.a; m.position.set(o.x, 0, o.z);
   m.castShadow = true; m.receiveShadow = true;
-  scene.add(m);
+  put(m);
 }
 
 // quarter pipes (north / south), full width
@@ -448,15 +486,15 @@ addObs({x:-6, z:-18, a:0, hw:1.4, pts:[[-3, 0.3], [3, 0.3]], mat:mat.wood});
 function cyl(r, len, m){ const g = new THREE.CylinderGeometry(r, r, len, 12); const me = new THREE.Mesh(g, m); me.castShadow = true; return me; }
 for (const sgn of [-1, 1]){
   const c = cyl(0.055, 2 * (AX + DECK), mat.metal);
-  c.rotation.z = Math.PI / 2; c.position.set(0, QR, sgn * AZ); scene.add(c);
+  c.rotation.z = Math.PI / 2; c.position.set(0, QR, sgn * AZ); put(c);
 }
 for (const sgn of [-1, 1]){
   const c = cyl(0.04, 2 * (AZ - QR), mat.metal);
-  c.rotation.x = Math.PI / 2; c.position.set(sgn * AX, 1.6, 0); scene.add(c);
+  c.rotation.x = Math.PI / 2; c.position.set(sgn * AX, 1.6, 0); put(c);
 }
 // ledge coping
 for (const sx of [9.45, 10.55]){
-  const c = cyl(0.03, 10, mat.metal); c.rotation.x = Math.PI / 2; c.position.set(sx, 0.45, 4); scene.add(c);
+  const c = cyl(0.03, 10, mat.metal); c.rotation.x = Math.PI / 2; c.position.set(sx, 0.45, 4); put(c);
 }
 
 const wallTex = canvasTex(1024, 256, (g, w, h) => {
@@ -476,7 +514,7 @@ wallTex.wrapS = THREE.RepeatWrapping;
 function wall(w, h, d, x, y, z, rep){
   const t = wallTex.clone(); t.needsUpdate = true; t.repeat.set(rep, 1);
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({map:t, roughness:0.9}));
-  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m);
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; put(m);
 }
 wall(2 * (AX + DECK) + 1.2, 3, 0.6, 0, QR + 1.5, -(AZ + DECK + 0.3), 4);
 wall(2 * (AX + DECK) + 1.2, 3, 0.6, 0, QR + 1.5, (AZ + DECK + 0.3), 4);
@@ -489,17 +527,17 @@ for (let i = 0; i < 70; i++){
   const ang = Math.random() * TAU, r = 75 + Math.random() * 70;
   const w = 6 + Math.random() * 12, h = 8 + Math.random() * 38;
   const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * (0.6 + Math.random())), cityMat);
-  b.position.set(Math.cos(ang) * r, h / 2, Math.sin(ang) * r); b.rotation.y = Math.random() * 3; scene.add(b);
+  b.position.set(Math.cos(ang) * r, h / 2, Math.sin(ang) * r); b.rotation.y = Math.random() * 3; put(b);
 }
 // lamp posts
 const lampHead = new THREE.MeshStandardMaterial({color:0xfff1c8, emissive:0xffd890, emissiveIntensity:1.2});
 for (const [lx, lz] of [[-AX - 1.2, -14], [-AX - 1.2, 14], [AX + 1.2, -14], [AX + 1.2, 14]]){
-  const p = cyl(0.08, 6, mat.metal); p.position.set(lx, 1.6 + 3, lz); scene.add(p);
-  const hd = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), lampHead); hd.position.set(lx, 1.6 + 6.1, lz); scene.add(hd);
+  const p = cyl(0.08, 6, mat.metal); p.position.set(lx, 1.6 + 3, lz); put(p);
+  const hd = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), lampHead); hd.position.set(lx, 1.6 + 6.1, lz); put(hd);
 }
 
 /* ---------- rails ---------- */
-const rails = [];
+
 function addRail(ax, ay, az, bx, by, bz, visible, m){
   const a = new V3(ax, ay, az), b = new V3(bx, by, bz);
   const d = new V3().subVectors(b, a), len = d.length(); d.normalize();
@@ -508,13 +546,13 @@ function addRail(ax, ay, az, bx, by, bz, visible, m){
   if (visible){
     const bar = cyl(0.035, len, m || mat.rail);
     bar.position.copy(a).add(b).multiplyScalar(0.5); bar.position.y -= 0.035;
-    bar.quaternion.setFromUnitVectors(new V3(0, 1, 0), d); scene.add(bar);
+    bar.quaternion.setFromUnitVectors(new V3(0, 1, 0), d); put(bar);
     const posts = Math.max(2, Math.round(len / 3) + 1);
     for (let i = 0; i < posts; i++){
       const t = i / (posts - 1), py = ay + (by - ay) * t - 0.035;
       const gy = heightAt(ax + (bx - ax) * t, az + (bz - az) * t);
       const p = cyl(0.03, py - gy, m || mat.rail);
-      p.position.set(ax + (bx - ax) * t, (py + gy) / 2, az + (bz - az) * t); scene.add(p);
+      p.position.set(ax + (bx - ax) * t, (py + gy) / 2, az + (bz - az) * t); put(p);
     }
   }
   return r;
@@ -1048,6 +1086,7 @@ function updateAudio(dt){
 
 /* ---------- spectators on the decks ---------- */
 const crowdState = {excite:0.08, list:[], t:0};
+let addPerson;   // (x, y, z, group): a spectator who turns to watch you and cheers
 {
   const tops = [0xff5470, 0xffb12e, 0x56e0cf, 0x8f7cff, 0xf4f0e8, 0x3d7bd9, 0x2fa36b, 0xeaa3d3];
   const skins = [0xf0c8a6, 0xd9a07a, 0xa8754f, 0x7a4f33];
@@ -1061,7 +1100,7 @@ const crowdState = {excite:0.08, list:[], t:0};
   const gHair = new THREE.SphereGeometry(0.138, 12, 8, 0, TAU, 0, 1.4);
   const gArm = new THREE.CylinderGeometry(0.05, 0.045, 0.6, 6); gArm.translate(0, -0.3, 0);
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  function person(x, y, z){
+  function person(x, y, z, group){
     const g = new THREE.Group(), top = pick(topM), skin = pick(skinM), s = 0.9 + Math.random() * 0.2;
     g.add(new THREE.Mesh(gLeg, legM)); g.add(new THREE.Mesh(gBody, top));
     const head = new THREE.Mesh(gHead, skin); head.position.y = 1.55; g.add(head);
@@ -1071,9 +1110,10 @@ const crowdState = {excite:0.08, list:[], t:0};
       const a = new THREE.Mesh(gArm, top); a.position.set(side * 0.23, 1.36, 0); g.add(a); arms.push(a);
     }
     g.scale.setScalar(s); g.position.set(x, y, z);
-    scene.add(g);
+    (group || PARK.group).add(g);
     crowdState.list.push({g, arms, x, y, z, ph:Math.random() * TAU, hop:0.6 + Math.random() * 0.6, wave:Math.random() < 0.5});
   }
+  addPerson = person;
   for (const sz of [-1, 1]) for (let x = -20; x <= 20; x += 1.25) if (Math.random() < 0.72) person(x + (Math.random() - 0.5) * 0.4, QR, sz * (AZ + DECK - 0.55 - Math.random() * 0.5));
   for (const sx of [-1, 1]) for (let z = -26; z <= 26; z += 1.4) if (Math.random() < 0.6) person(sx * (AX + DECK - 0.55 - Math.random() * 0.4), 1.6, z + (Math.random() - 0.5) * 0.4);
 }
@@ -1087,6 +1127,7 @@ function updateCrowd(dt){
   if (cs.disappoint > 0) cs.disappoint -= dt;
   const e = cs.excite, sad = cs.disappoint > 0;
   for (const p of cs.list){
+    if (!p.g.parent.visible) continue;   // spectators of the other map
     p.g.rotation.y = Math.atan2(P.pos.x - p.x, P.pos.z - p.z);
     const b = Math.abs(Math.sin(cs.t * 8 + p.ph));
     p.g.position.y = p.y + (e > 0.2 && !sad ? b * 0.32 * p.hop * e : 0);
@@ -1095,6 +1136,681 @@ function updateCrowd(dt){
     p.arms[0].rotation.set(sad ? -2.6 : 0, 0, -(raise + (p.wave ? wv : 0)));
     p.arms[1].rotation.set(sad ? -2.6 : 0, 0, raise - (p.wave ? wv : 0));
   }
+}
+
+/* ---------- map 2: Kyoto, Shijo-Kawaramachi at night ----------
+   x = east, z = south (north is -z). Street level is y 0; the Kamo riverbank sits lower, at RB.
+   West → east: Shinkyogoku arcade, Kawaramachi-dori (covered sidewalks), Kiyamachi + the Takase river,
+   Pontocho alley, the Kamo river (riverbank, water, Shijo Ohashi bridge), Kawabata-dori and the kabuki theatre.
+   Shijo-dori runs west → east across all of it. */
+const KYOTO = (() => {
+const X0 = -66, X1 = 58, Z0 = -44, Z1 = 30, RB = -2.6, WATER = RB - 0.5;
+const SN0 = -2.4, SN1 = 18.4;                 // Shijo-dori incl. sidewalks (on the bridge: deck + parapets)
+const inShijo = z => z > SN0 && z < SN1;
+const takaseBridge = z => (z > -17 && z < -15) || (z > -33 && z < -31);
+const K = newMap({
+  id:'kyoto', name:'京都・河原町(夜)', short:'河原町',
+  desc:'夜の四条河原町。アーケード、木屋町と高瀬川、先斗町、四条大橋から鴨川の河川敷まで、ひと続きで滑れる。',
+  base(x, z){
+    if (x < X0 || x > X1 || z < Z0 || z > Z1) return BLOCKED;
+    if (x >= 12 && x < 34 && !inShijo(z)) return x >= 24 ? BLOCKED : RB;      // riverbank, then the river
+    if (x >= -14 && x < -11.5 && !inShijo(z) && !takaseBridge(z)) return BLOCKED;   // Takase river
+    return 0;
+  },
+  bounds:{x0:X0, x1:X1, z0:Z0, z1:Z1},
+  start:{x:-24, z:8, yaw:Math.PI / 2}, view:{x:-4, z:-8, r:60, h:32}, tightCam:true,
+});
+K.group.visible = false;
+
+/* --- little helpers --- */
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const MIN = '"Hiragino Mincho ProN","Yu Mincho","YuMincho",serif';
+const GOTH = '"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif';
+function rtex(w, h, draw){ const t = canvasTex(w, h, draw); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
+const lam = (c, o) => new THREE.MeshLambertMaterial(Object.assign({color:c}, o || {}));
+const glow = (c, o) => new THREE.MeshBasicMaterial(Object.assign({color:c}, o || {}));
+// world-space UVs, so one shared texture lines up across many boxes (su, sv = repeats per metre)
+function wuv(geo, ox, oy, oz, su, sv){
+  const p = geo.attributes.position, n = geo.attributes.normal, uv = geo.attributes.uv;
+  for (let i = 0; i < p.count; i++){
+    const x = p.getX(i) + ox, y = p.getY(i) + oy, z = p.getZ(i) + oz;
+    if (Math.abs(n.getY(i)) > 0.5) uv.setXY(i, x * su, -z * sv);
+    else if (Math.abs(n.getX(i)) > 0.5) uv.setXY(i, z * su * Math.sign(n.getX(i)), y * sv);
+    else uv.setXY(i, -x * su * Math.sign(n.getZ(i)), y * sv);
+  }
+  uv.needsUpdate = true; return geo;
+}
+// a box from (x0,y0,z0) to (x1,y1,z1); solid = the skater collides with it (its top is the height)
+function box(x0, x1, y0, y1, z0, z1, m, o){
+  o = o || {};
+  const w = x1 - x0, h = y1 - y0, d = z1 - z0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
+  const geo = new THREE.BoxGeometry(w, h, d);
+  if (o.su) wuv(geo, cx, cy, cz, o.su, o.sv || o.su);
+  const me = new THREE.Mesh(geo, m); me.position.set(cx, cy, cz);
+  me.receiveShadow = true; me.castShadow = !!o.cast;
+  put(me);
+  if (o.solid) solid(x0, x1, z0, z1, y1);
+  return me;
+}
+function solid(x0, x1, z0, z1, top){ addObs({x:(x0 + x1) / 2, z:(z0 + z1) / 2, a:0, hw:(z1 - z0) / 2, pts:[[-(x1 - x0) / 2, top], [(x1 - x0) / 2, top]]}); }
+function flat(x0, x1, z0, z1, y, m, su, sv){
+  const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0); geo.rotateX(-Math.PI / 2);
+  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  if (su) wuv(geo, cx, y, cz, su, sv || su);
+  const me = new THREE.Mesh(geo, m); me.position.set(cx, y, cz); me.receiveShadow = true; put(me); return me;
+}
+// grindable ledge: solid box plus an invisible rail along both long top edges
+function ledge(x0, x1, z0, z1, y0, top, m){
+  box(x0, x1, y0, top, z0, z1, m, {solid:true, su:0.5, cast:true});
+  if (x1 - x0 >= z1 - z0){ for (const z of [z0 + 0.04, z1 - 0.04]) addRail(x0 + 0.05, top, z, x1 - 0.05, top, z, false); }
+  else { for (const x of [x0 + 0.04, x1 - 0.04]) addRail(x, top, z0 + 0.05, x, top, z1 - 0.05, false); }
+}
+// many copies of one small thing in a single draw call
+function inst(geo, m, list, set){
+  if (!list.length) return null;
+  const im = new THREE.InstancedMesh(geo, m, list.length), o = new THREE.Object3D(), col = new THREE.Color();
+  list.forEach((it, i) => {
+    o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+    set(o, it); o.updateMatrix(); im.setMatrixAt(i, o.matrix);
+    if (it.c !== undefined){ col.set(it.c); im.setColorAt(i, col); }
+  });
+  im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+  put(im); return im;
+}
+
+/* --- textures --- */
+const asphalt = noiseTex('#2a2a31', '210,210,230', false);
+const paveT = rtex(256, 256, (g, w, h) => {
+  g.fillStyle = '#4a4744'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++){ const v = 96 + Math.random() * 30 | 0; g.fillStyle = `rgb(${v},${v - 5},${v - 10})`; g.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); }
+  for (let i = 0; i < 3000; i++){ g.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+});
+function stones(base, lo, hi){
+  return rtex(256, 256, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 32){
+      let x = -Math.random() * 60;
+      while (x < w){ const bw = rnd(36, 84), v = rnd(lo, hi) | 0; g.fillStyle = `rgb(${v},${v - 3},${v - 7})`; g.fillRect(x + 2, y + 2, bw - 4, 28); x += bw; }
+    }
+    for (let i = 0; i < 2500; i++){ g.fillStyle = `rgba(0,0,0,${Math.random() * 0.15})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  });
+}
+const stoneT = stones('#22201e', 52, 78), wallStoneT = stones('#2c2a27', 70, 104);
+const sandT = noiseTex('#4e4840', '20,15,10', false), grassT = noiseTex('#1d2a1a', '90,140,70', false);
+const woodT = noiseTex('#3a2618', '10,6,3', false);
+const waterT = rtex(128, 512, (g, w, h) => {
+  g.fillStyle = '#081230'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 320; i++){
+    const warm = Math.random() < 0.55;
+    g.fillStyle = warm ? `rgba(255,${170 + Math.random() * 60 | 0},110,${rnd(0.08, 0.4)})` : `rgba(140,170,255,${rnd(0.06, 0.25)})`;
+    g.fillRect(Math.random() * w, Math.random() * h, rnd(8, 34), rnd(1, 3));
+  }
+});
+const poolT = canvasTex(128, 128, (g, w) => {
+  const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,.35)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, w, w);
+});
+const lanternT = canvasTex(64, 64, (g, w, h) => {
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+  for (let y = 6; y < h; y += 6){ g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(0, y, w, 1); }
+  g.fillStyle = '#1a1210'; g.fillRect(0, 0, w, 7); g.fillRect(0, h - 7, w, 7);
+  g.fillStyle = 'rgba(160,20,20,.85)';   // a plover-ish mark
+  g.beginPath(); g.ellipse(w * 0.25, h / 2, 7, 5, 0, 0, TAU); g.fill(); g.beginPath(); g.ellipse(w * 0.75, h / 2, 7, 5, 0, 0, TAU); g.fill();
+});
+const stripeT = rtex(128, 32, (g, w, h) => {
+  g.fillStyle = '#e8e2d6'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8202c';
+  for (let x = -h; x < w + h; x += 32){ g.beginPath(); g.moveTo(x, h); g.lineTo(x + 16, h); g.lineTo(x + 16 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+});
+const willowT = canvasTex(128, 256, (g, w, h) => {
+  g.clearRect(0, 0, w, h);
+  for (let i = 0; i < 90; i++){
+    const x = Math.random() * w, len = h * rnd(0.55, 1), gr = 80 + Math.random() * 70 | 0;
+    g.strokeStyle = `rgba(${gr * 0.45 | 0},${gr},${gr * 0.4 | 0},.9)`; g.lineWidth = rnd(1.5, 3.5);
+    g.beginPath(); g.moveTo(x, 0); g.quadraticCurveTo(x + rnd(-8, 8), len / 2, x + rnd(-6, 6), len); g.stroke();
+  }
+});
+// building faces: wall colour + window grid; `emi` has only the lit windows so they glow at night
+function facade(wall, cols, floors, litP){
+  const W = 256, H = 384;
+  const maps = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
+  const g = maps[0].getContext('2d'), e = maps[1].getContext('2d');
+  g.fillStyle = wall; g.fillRect(0, 0, W, H); e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  const cw = W / cols, fh = H / floors;
+  for (let f = 0; f < floors; f++) for (let c = 0; c < cols; c++){
+    const x = c * cw + cw * 0.14, y = f * fh + fh * 0.22, ww = cw * 0.72, hh = fh * 0.5;
+    const lit = Math.random() < litP, warm = Math.random() < 0.7;
+    g.fillStyle = '#141824'; g.fillRect(x, y, ww, hh);
+    if (lit){
+      const col = warm ? `hsl(${rnd(28, 44)},${rnd(60, 90)}%,${rnd(58, 72)}%)` : `hsl(${rnd(190, 215)},${rnd(30, 60)}%,${rnd(70, 85)}%)`;
+      e.fillStyle = col; e.fillRect(x, y, ww, hh);
+      e.fillStyle = 'rgba(0,0,0,.35)'; e.fillRect(x + ww * rnd(0.1, 0.6), y, ww * 0.12, hh);   // a curtain
+    }
+  }
+  return maps.map(c => { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; });
+}
+const FACADES = [['#5d5a57', 4, 4, 0.4], ['#3f444c', 3, 4, 0.5], ['#6b6157', 4, 4, 0.35], ['#2f3238', 5, 5, 0.55], ['#7a746c', 4, 4, 0.3], ['#4a3f3a', 3, 4, 0.45]]
+  .map(([c, a, b, p]) => { const [map, emi] = facade(c, a, b, p); return lam(0xffffff, {map, emissiveMap:emi, emissive:0xffffff}); });
+// a wooden townhouse front (machiya): lattice on the ground floor with warm light behind, small upstairs slots
+function machiyaTex(){
+  const W = 256, H = 224, maps = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
+  const g = maps[0].getContext('2d'), e = maps[1].getContext('2d');
+  g.fillStyle = '#2b1b12'; g.fillRect(0, 0, W, H); e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  const yb = H - H * 3 / 7;   // ground floor: lower 3 m
+  for (const [x0, x1] of [[10, 118], [138, 246]]){
+    e.fillStyle = `hsl(${rnd(26, 36)},75%,${rnd(24, 34)}%)`; e.fillRect(x0, yb + 8, x1 - x0, H - yb - 14);
+    g.fillStyle = "#1a0f09"; for (let x = x0; x < x1; x += 4){ g.fillRect(x, yb + 8, 2, H - yb - 14); e.fillStyle = "#000"; e.fillRect(x, yb + 8, 2, H - yb - 14); }
+  }
+  e.fillStyle = '#23305e'; e.fillRect(120, yb + 14, 16, 36);   // noren
+  for (let x = 24; x < W - 30; x += 52){
+    e.fillStyle = Math.random() < 0.6 ? `hsl(${rnd(28, 40)},80%,${rnd(40, 55)}%)` : '#000'; e.fillRect(x, H * 0.12, 30, H * 0.18);
+    g.fillStyle = '#140b06'; for (let k = 0; k < 30; k += 6){ g.fillRect(x + k, H * 0.12, 2, H * 0.18); e.fillStyle = '#000'; e.fillRect(x + k, H * 0.12, 2, H * 0.18); }
+  }
+  return maps.map(c => { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; });
+}
+const MACHIYA = [0, 1, 2].map(() => { const [map, emi] = machiyaTex(); return lam(0xffffff, {map, emissiveMap:emi, emissive:0xffffff}); });
+const SHOPS = ['喫茶', '古着', 'ラーメン', '京菓子', '雑貨', '書店', '薬', '居酒屋', '和菓子', '甘味処', '土産', '焼鳥', '珈琲', '靴', '眼鏡', '漬物', '茶舗', 'うどん', '鞄', '抹茶', '扇子', 'お香', '手ぬぐい', 'カラオケ', 'ゲーム', '服', 'パン', '寿司', 'カレー', '時計'];
+// street-level shop windows with a name board above (8 m wide, 3 m tall, two shops)
+const SHOPFRONTS = [0, 1, 2, 3, 4, 5, 6, 7].map(() => rtex(512, 192, (g, w, h) => {
+  g.fillStyle = '#0d0b10'; g.fillRect(0, 0, w, h);
+  for (const x0 of [0, w / 2]){
+    const hue = rnd(0, 360), board = Math.random() < 0.5;
+    g.fillStyle = board ? `hsl(${hue},55%,30%)` : '#f2ead8'; g.fillRect(x0 + 6, 6, w / 2 - 12, 44);
+    g.fillStyle = board ? '#fff4e0' : `hsl(${hue},70%,28%)`; g.font = `700 32px ${Math.random() < 0.5 ? MIN : GOTH}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pick(SHOPS), x0 + w / 4, 29);
+    const gr = g.createLinearGradient(0, 58, 0, h);
+    const warm = Math.random() < 0.75;
+    gr.addColorStop(0, warm ? '#ffe2a8' : '#e0f0ff'); gr.addColorStop(1, warm ? '#c98a3c' : '#8fb4d8');
+    g.fillStyle = gr; g.fillRect(x0 + 10, 58, w / 2 - 20, h - 64);
+    g.fillStyle = 'rgba(40,24,16,.55)';
+    for (let k = 0; k < 6; k++) g.fillRect(x0 + 16 + Math.random() * (w / 2 - 50), 70 + Math.random() * 60, rnd(10, 30), rnd(20, 50));
+    g.fillStyle = '#0d0b10'; g.fillRect(x0 + w / 4 - 2, 58, 4, h - 64);
+  }
+})).map(map => glow(0xcfc6b8, {map}));
+const VSIGNS = ['カラオケ', '居酒屋', '焼肉', 'ラーメン', '漫画喫茶', 'ゲーム', '喫茶', 'バー', 'ホテル', '薬', '美容室', '寿司'].map(t => canvasTex(64, 320, (g, w, h) => {
+  const hue = pick([0, 330, 45, 200, 120, 280]);
+  g.fillStyle = `hsl(${hue},85%,${rnd(45, 58)}%)`; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#fff'; g.fillRect(4, 4, w - 8, h - 8); g.fillStyle = `hsl(${hue},85%,${rnd(45, 58)}%)`; g.fillRect(8, 8, w - 16, h - 16);
+  g.fillStyle = '#fff'; g.font = `700 44px ${GOTH}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const ch = [...t], step = Math.min(56, (h - 30) / ch.length);
+  ch.forEach((c, i) => g.fillText(c, w / 2, 20 + step * (i + 0.5)));
+})).map(map => glow(0xffffff, {map, side:THREE.DoubleSide}));
+function bannerTex(text, bg, fg, font, w, h){
+  return canvasTex(w || 512, h || 96, (g, W, H) => {
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.fillStyle = fg; g.font = `700 ${H * 0.62 | 0}px ${font || MIN}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, W / 2, H / 2 + 2);
+  });
+}
+
+/* --- materials --- */
+const M = {
+  asphalt:lam(0xffffff, {map:asphalt}), pave:lam(0xffffff, {map:paveT}), stone:lam(0xffffff, {map:stoneT}),
+  wallStone:lam(0xffffff, {map:wallStoneT}), sand:lam(0xffffff, {map:sandT}), grass:lam(0xffffff, {map:grassT}),
+  wood:lam(0xffffff, {map:woodT}), conc:lam(0x6a6762), darkConc:lam(0x4a4744), roof:lam(0x1c1c22), tile:lam(0x26272d),
+  metal:lam(0x9aa0aa), white:lam(0xd8d6d0), post:lam(0x2a2c30), paint:lam(0xcfcfc8, {polygonOffset:true, polygonOffsetFactor:-2}),
+  water:glow(0xffffff, {map:waterT}), foam:glow(0x9fb0c8, {transparent:true, opacity:0.55, depthWrite:false}),
+  lampHead:glow(0xffe2b0), cool:glow(0xdff0ff), red:glow(0xff3b2f), green:glow(0x3dffb0),
+  arcadeGlass:glow(0x8da4c8, {transparent:true, opacity:0.28, side:THREE.DoubleSide, depthWrite:false}),
+  pool:glow(0xffc982, {map:poolT, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4}),
+  lantern:glow(0xffffff, {map:lanternT}), stripe:lam(0xffffff, {map:stripeT, emissive:0x3a2a28}),
+  willow:lam(0xffffff, {map:willowT, transparent:true, alphaTest:0.35, side:THREE.DoubleSide, emissive:0x0c1a08}),
+  blossom:lam(0xf4b6c8, {emissive:0x4a1c2a}), trunk:lam(0x2a1d16),
+};
+asphalt.repeat.set(1, 1);
+
+// collected as we go, drawn once at the end
+const LAMPS = [], POOLS = [], LANTERNS = [], BLINK = [], DRAPES = [], BLOSSOMS = [];
+function lamp(x, z, y, h){ LAMPS.push({x, y, z, h}); POOLS.push({x, y, z, r:9}); }
+function lantern(x, y, z, r, c){ LANTERNS.push({x, y, z, r, c:c === undefined ? 0xffffff : c}); }
+
+/* --- sky: deep night with stars, a moon and the hills around the city --- */
+const nightSky = canvasTex(4, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#02030b'); gr.addColorStop(0.4, '#080d26'); gr.addColorStop(0.62, '#141638');
+  gr.addColorStop(0.8, '#2a2140'); gr.addColorStop(1, '#4a2e3c');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+{
+  const pts = [];
+  for (let i = 0; i < 700; i++){
+    const th = Math.random() * TAU, y = rnd(0.16, 1), r = Math.sqrt(1 - y * y);
+    pts.push(Math.cos(th) * r * 330, y * 330, Math.sin(th) * r * 330);
+  }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  put(new THREE.Points(sg, new THREE.PointsMaterial({color:0xcfd8ff, size:1.6, sizeAttenuation:false, fog:false})));
+  const moonT = canvasTex(128, 128, (g, w) => {
+    const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    r.addColorStop(0, 'rgba(255,250,228,1)'); r.addColorStop(0.28, 'rgba(255,246,214,1)'); r.addColorStop(0.32, 'rgba(255,236,190,.35)'); r.addColorStop(1, 'rgba(255,230,180,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, w);
+  });
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({map:moonT, fog:false, depthWrite:false}));
+  moon.position.set(-150, 190, -200); moon.scale.set(60, 60, 1); put(moon);
+  // Higashiyama to the east, Kitayama to the north, the western hills
+  const hillM = lam(0x0b0d1a, {fog:false});
+  for (let i = 0; i < 26; i++){
+    const a = rnd(-1.2, 2.1), r = rnd(300, 340);   // from north-west round to the south-east
+    const h = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8, 0, TAU, 0, Math.PI / 2), hillM);
+    h.position.set(Math.sin(a) * r * (a > 0.6 ? 0.85 : 1), -6, -Math.cos(a) * r); h.scale.set(rnd(60, 110), rnd(28, 60), rnd(40, 70)); put(h);
+  }
+}
+// distant blocks with lit windows, fading into the haze
+{
+  const far = [];
+  for (let i = 0; i < 90; i++){
+    const a = Math.random() * TAU, r = rnd(85, 135);
+    far.push({x:Math.cos(a) * r * 1.1, z:Math.sin(a) * r * 0.8 - 8, w:rnd(8, 18), h:rnd(8, 34), d:rnd(8, 16), ry:rnd(0, 3)});
+  }
+  inst(new THREE.BoxGeometry(1, 1, 1), FACADES[3], far, (o, b) => { o.position.set(b.x, b.h / 2, b.z); o.scale.set(b.w, b.h, b.d); o.rotation.y = b.ry; });
+}
+
+/* --- ground: streets at 0, the riverbank lower down, water in the river and the Takase --- */
+flat(-150, -14, -150, 120, 0, M.asphalt, 1 / 6);
+flat(-11.5, 12, -150, 120, 0, M.asphalt, 1 / 6);
+flat(-14, -11.5, -2, 18, 0, M.asphalt, 1 / 6);          // Shijo-dori over the Takase
+flat(34, 160, -150, 120, 0, M.asphalt, 1 / 6);
+flat(12, 24, -150, SN0, RB, M.sand, 1 / 4); flat(12, 24, SN1, 120, RB, M.sand, 1 / 4);
+flat(20.6, 23.3, -150, SN0, RB + 0.01, M.grass, 1 / 3); flat(20.6, 23.3, SN1, 120, RB + 0.01, M.grass, 1 / 3);
+const water = flat(24, 34, -150, 120, WATER, M.water, 1 / 10, 1 / 20);
+flat(-14, -11.5, -150, -2, -0.55, M.water, 1 / 3, 1 / 12); flat(-14, -11.5, 18, 120, -0.55, M.water, 1 / 3, 1 / 12);
+// weirs: little steps in the river with white water
+for (const z of [-30, 26]){ box(24, 34, WATER - 0.4, WATER + 0.05, z - 0.6, z + 0.6, M.darkConc); flat(24, 34, z + 0.6, z + 2.2, WATER + 0.03, M.foam); }
+
+/* --- road paint --- */
+const PAINT = [];
+const dash = (x0, x1, z0, z1) => PAINT.push({x:(x0 + x1) / 2, z:(z0 + z1) / 2, w:x1 - x0, d:z1 - z0});
+for (let z = -150; z < 110; z += 6) if (z + 3 < 0 || z > 16) for (const x of [-43, -40, -37]) dash(x - 0.08, x + 0.08, z, z + 3);   // Kawaramachi lanes
+for (let x = -150; x < 160; x += 6) if ((x + 3 < -48 || x > -32) && (x + 3 < 12 || x > 34)) for (const z of [5, 8, 11]) dash(x, x + 3, z - 0.08, z + 0.08);   // Shijo lanes
+for (let x = 13; x < 33; x += 6) dash(x, x + 3, 7.92, 8.08);                                           // on the bridge
+for (let x = -45.6; x < -34.2; x += 0.9){ dash(x, x + 0.45, -1.6, 1.6); dash(x, x + 0.45, 14.4, 17.6); }   // crosswalks over Kawaramachi
+for (let z = 2.4; z < 13.8; z += 0.9){ dash(-49.6, -46.4, z, z + 0.45); dash(-33.6, -30.4, z, z + 0.45); }   // and over Shijo
+dash(-46, -34, 2.2, 2.5); dash(-46, -34, 13.5, 13.8);
+for (let z = -150; z < 110; z += 6) if (!inShijo(z) && !inShijo(z + 3)) dash(43.92, 44.08, z, z + 3);   // Kawabata
+inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), M.paint, PAINT, (o, p) => { o.position.set(p.x, 0.012, p.z); o.scale.set(p.w, 1, p.d); });
+
+/* --- sidewalks (a 15 cm curb you can ollie up) --- */
+const CURB = 0.15;
+const walk = (x0, x1, z0, z1) => box(x0, x1, -0.3, CURB, z0, z1, M.pave, {solid:true, su:0.5});
+walk(-50, -46, Z0 - 60, 2); walk(-50, -46, 14, Z1 + 60);         // Kawaramachi west
+walk(-34, -30, Z0 - 60, 2); walk(-34, -30, 14, Z1 + 60);         // Kawaramachi east
+walk(-66 - 60, -50, -2, 2); walk(-66 - 60, -50, 14, 18);         // Shijo, west of Kawaramachi
+walk(-30, 34, -2, 2); walk(-30, 34, 14, 18);                     // Shijo to the end of the bridge
+walk(34, X1 + 60, -2, 2); walk(34, X1 + 60, 14, 18);             // and on to the theatre
+
+/* --- buildings --- */
+const signs = [];
+function building(x0, x1, z0, z1, h, o){
+  o = o || {};
+  const mach = !!o.machiya, fm = mach ? pick(MACHIYA) : (o.mat || pick(FACADES));
+  const geo = new THREE.BoxGeometry(x1 - x0, h, z1 - z0);
+  wuv(geo, (x0 + x1) / 2, h / 2, (z0 + z1) / 2, 1 / 8, mach ? 1 / 7 : 1 / 12);
+  const me = new THREE.Mesh(geo, [fm, fm, M.roof, M.roof, fm, fm]);
+  me.position.set((x0 + x1) / 2, h / 2, (z0 + z1) / 2); me.castShadow = me.receiveShadow = true; put(me);
+  if (!o.decor) solid(x0, x1, z0, z1, h);
+  for (const side of o.fronts || ''){
+    // which face, and the strip just in front of it
+    const ns = side === 'N' || side === 'S';
+    const fz = side === 'N' ? z0 - 0.06 : z1 + 0.06, fx = side === 'W' ? x0 - 0.06 : x1 + 0.06;
+    if (mach){   // tiled eave over the ground floor, and a lantern by the door
+      const ev = 0.7;
+      if (ns) box(x0, x1, 2.95, 3.1, side === 'N' ? z0 - ev : z1, side === 'N' ? z0 : z1 + ev, M.tile);
+      else box(side === 'W' ? x0 - ev : x1, side === 'W' ? x0 : x1 + ev, 2.95, 3.1, z0, z1, M.tile);
+      const len = ns ? x1 - x0 : z1 - z0;
+      for (let t = 2; t < len - 1; t += 4.2){
+        const lx = ns ? x0 + t : (side === 'W' ? x0 - 0.35 : x1 + 0.35), lz = ns ? (side === 'N' ? z0 - 0.35 : z1 + 0.35) : z0 + t;
+        lantern(lx, 2.25, lz, 0.2, Math.random() < 0.3 ? 0xff6a4a : 0xfff0d8);
+      }
+      continue;
+    }
+    if (o.noShop) continue;
+    const len = ns ? x1 - x0 : z1 - z0;
+    const g = new THREE.PlaneGeometry(len, 3);
+    const sm = pick(SHOPFRONTS), t = sm.map.clone(); t.needsUpdate = true; t.repeat.set(len / 8, 1);
+    const shop = new THREE.Mesh(g, glow(0xcfc6b8, {map:t}));
+    shop.position.set(ns ? (x0 + x1) / 2 : fx, 1.5, ns ? fz : (z0 + z1) / 2);
+    shop.rotation.y = side === 'S' ? 0 : side === 'N' ? Math.PI : side === 'E' ? Math.PI / 2 : -Math.PI / 2;
+    put(shop);
+    if (h > 9 && Math.random() < 0.65){   // a vertical sign sticking out over the street
+      const along = rnd(1, len - 1), out = side === 'N' || side === 'W' ? -1 : 1;
+      signs.push({x:ns ? x0 + along : fx + out * 0.55, z:ns ? fz + out * 0.55 : z0 + along, y:rnd(5, Math.min(h - 3, 11)), ns});
+    }
+  }
+}
+// split a long block into a row of different buildings along z
+function row(x0, x1, z0, z1, o){
+  let z = z0;
+  while (z < z1 - 0.5){
+    let w = o.machiya ? rnd(5, 8) : rnd(6, 11); if (z1 - (z + w) < 4) w = z1 - z;
+    const h = o.machiya ? rnd(6.5, 8) : rnd(o.hmin || 9, o.hmax || 22);
+    let fr = o.fronts || '';
+    if (z === z0 && o.endN) fr += 'N';
+    if (z + w >= z1 - 0.01 && o.endS) fr += 'S';
+    building(x0, x1, z, z + w, h, Object.assign({}, o, {fronts:fr}));
+    z += w;
+  }
+}
+row(-66, -64, Z0 - 50, -2.4, {fronts:'E', hmin:9, hmax:14, endS:true});                 // west side of Shinkyogoku
+row(-57, -50, Z0 - 50, -2.4, {fronts:'WE', endS:true});                                  // between Shinkyogoku and Kawaramachi
+building(-80, -50, 18.4, Z1 + 30, 26, {fronts:'NE', mat:FACADES[4]});                    // the big department store corner
+row(-30, -20, Z0 - 50, -2.4, {fronts:'WE', endS:true});
+row(-30, -20, 18.4, Z1 + 50, {fronts:'WE', endN:true});
+row(-8, 1.6, Z0 - 40, -30, {fronts:'WE', machiya:true});                                 // Pontocho, west row
+row(-8, 1.6, -28.6, -2.4, {fronts:'WE', machiya:true, endS:true});
+row(4, 10, Z0 - 40, -22, {fronts:'WE', machiya:true});                                   // Pontocho, river row
+row(4, 10, -20.6, -2.4, {fronts:'WE', machiya:true, endS:true});
+row(-8, 8, 18.4, Z1 + 50, {fronts:'W', endN:true, hmin:8, hmax:16});
+row(48, 58, Z0 - 50, -18, {fronts:'W', hmin:8, hmax:18});
+row(48, 58, 18.4, Z1 + 50, {fronts:'W', endN:true, hmin:8, hmax:18});
+// decor further out (beyond the edge of the playable area)
+row(-110, -66, -14, -2.4, {fronts:'S', decor:true, noShop:true});
+row(-110, -80, 18.4, 30, {fronts:'N', decor:true, noShop:true});
+row(58, 100, -14, -2.4, {fronts:'S', decor:true, noShop:true});
+row(58, 100, 18.4, 30, {fronts:'N', decor:true, noShop:true});
+for (const s of signs){   // the sign stands edge-on to the wall, readable from up and down the street
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 4.2), pick(VSIGNS));
+  m.position.set(s.x, s.y, s.z); m.rotation.y = s.ns ? Math.PI / 2 : 0; put(m);
+}
+
+/* --- covered sidewalks (arcades) on Kawaramachi and western Shijo --- */
+const ROOF = 3.5;
+function arcade(x0, x1, z0, z1, curbSide){
+  box(x0, x1, ROOF, ROOF + 0.3, z0, z1, M.darkConc, {cast:false});
+  const alongZ = z1 - z0 > x1 - x0;
+  // light panels under the roof
+  for (let t = (alongZ ? z0 : x0) + 2; t < (alongZ ? z1 : x1) - 1; t += 4){
+    if (alongZ) box(x0 + 0.8, x1 - 0.8, ROOF - 0.04, ROOF, t, t + 1.4, M.cool);
+    else box(t, t + 1.4, ROOF - 0.04, ROOF, z0 + 0.8, z1 - 0.8, M.cool);
+    POOLS.push({x:alongZ ? (x0 + x1) / 2 : t + 0.7, y:CURB, z:alongZ ? t + 0.7 : (z0 + z1) / 2, r:5, c:0xcfe4ff});
+  }
+  // pillars along the curb, and a sign band on the street side
+  for (let t = (alongZ ? z0 : x0) + 3; t < (alongZ ? z1 : x1) - 1; t += 6){
+    const px = curbSide === 'E' ? x1 - 0.3 : curbSide === 'W' ? x0 + 0.3 : t, pz = curbSide === 'S' ? z1 - 0.3 : curbSide === 'N' ? z0 + 0.3 : t;
+    box(px - 0.18, px + 0.18, CURB, ROOF, pz - 0.18, pz + 0.18, M.metal, {solid:true});
+  }
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(alongZ ? z1 - z0 : x1 - x0, 0.55), arcadeBand(alongZ ? z1 - z0 : x1 - x0));
+  if (curbSide === 'E'){ band.position.set(x1 + 0.02, ROOF + 0.15, (z0 + z1) / 2); band.rotation.y = Math.PI / 2; }
+  if (curbSide === 'W'){ band.position.set(x0 - 0.02, ROOF + 0.15, (z0 + z1) / 2); band.rotation.y = -Math.PI / 2; }
+  if (curbSide === 'S'){ band.position.set((x0 + x1) / 2, ROOF + 0.15, z1 + 0.02); }
+  if (curbSide === 'N'){ band.position.set((x0 + x1) / 2, ROOF + 0.15, z0 - 0.02); band.rotation.y = Math.PI; }
+  put(band);
+}
+const bandT = rtex(1024, 64, (g, w, h) => {
+  g.fillStyle = '#16131c'; g.fillRect(0, 0, w, h);
+  g.font = `700 36px ${GOTH}`; g.textBaseline = 'middle';
+  let x = 10;
+  while (x < w - 60){ const t = pick(SHOPS); g.fillStyle = `hsl(${rnd(0, 360)},80%,72%)`; g.fillText(t, x, h / 2); x += g.measureText(t).width + 40; }
+});
+function arcadeBand(len){ const t = bandT.clone(); t.needsUpdate = true; t.repeat.set(len / 16, 1); return glow(0xffffff, {map:t}); }
+arcade(-50, -45.9, Z0 - 10, 2, 'E'); arcade(-50, -45.9, 14, Z1 + 10, 'E');
+arcade(-34.1, -30, Z0 - 10, 2, 'W'); arcade(-34.1, -30, 14, Z1 + 10, 'W');
+arcade(-66 - 20, -50, -2, 2.1, 'S'); arcade(-66 - 20, -50, 13.9, 18, 'N');
+
+/* --- Shinkyogoku: a long covered shopping street with a glass roof --- */
+{
+  const x0 = -64, x1 = -57, cx = (x0 + x1) / 2, r = 3.5, len = 70, cz = -2.4 - len / 2;
+  flat(x0, x1, cz - len / 2, -2.4, 0.006, M.pave, 1 / 2);
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 20, 1, true, Math.PI / 2, Math.PI), M.arcadeGlass);
+  roof.rotation.x = Math.PI / 2; roof.position.set(cx, 8.4, cz); put(roof);
+  for (let z = -4; z > cz - len / 2; z -= 5){
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(r, 0.07, 6, 24, Math.PI), M.metal); arch.position.set(cx, 8.4, z); put(arch);
+    box(cx - 0.6, cx + 0.6, 8.0, 8.06, z - 1.6, z + 0.8, M.cool);
+    POOLS.push({x:cx, y:0.006, z:z - 0.4, r:7, c:0xdfeaff});
+    lantern(cx - 2.2, 4.4, z - 2.5, 0.24, 0xfff0d8); lantern(cx + 2.2, 4.4, z - 2.5, 0.24, 0xff6a4a);
+  }
+  // the gate sign at the Shijo end
+  box(x0, x1, 5.2, 7.0, -2.6, -2.3, M.darkConc);
+  const gate = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 1.6), glow(0xffffff, {map:bannerTex('新京極', '#1b0d10', '#ffd27a', MIN, 512, 128)}));
+  gate.position.set(cx, 6.1, -2.22); put(gate);
+  for (const z of [-11, -25, -39]) ledge(cx - 0.5, cx + 0.5, z - 1.6, z + 1.6, 0, 0.48, M.stone);   // planters down the middle
+}
+
+/* --- street lamps along Kawaramachi and Shijo; traffic lights at the crossing --- */
+for (let z = Z0 - 30; z < Z1 + 30; z += 12) if (z < -4 || z > 20){ lamp(-45.65, z, 0, 6.2); lamp(-34.35, z, 0, 6.2); }   // just outside the arcade roofs
+for (let x = -26; x < 12; x += 10){ lamp(x, 1.1, CURB, 5.5); lamp(x + 5, 14.9, CURB, 5.5); }
+for (let x = 38; x < X1 + 30; x += 10){ lamp(x, 1.1, CURB, 5.5); lamp(x + 5, 14.9, CURB, 5.5); }
+for (const [x, z, ry] of [[-46.4, 1.6, 0], [-33.6, 1.6, Math.PI / 2], [-33.6, 14.4, Math.PI], [-46.4, 14.4, -Math.PI / 2]]){
+  const pole = cyl(0.1, 5.6, M.post); pole.position.set(x, CURB + 2.8, z); put(pole);
+  const arm = new THREE.Group(); arm.position.set(x, CURB + 5.3, z); arm.rotation.y = ry; put(arm);
+  const bar = cyl(0.07, 4.4, M.post); bar.rotation.z = Math.PI / 2; bar.position.x = 2.2; arm.add(bar);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.42, 0.34), M.post); head.position.set(3.6, -0.3, 0); arm.add(head);
+  for (const [k, m] of [[-0.42, M.green], [0, lam(0x332d10)], [0.42, lam(0x3a1010)]]){
+    const l = new THREE.Mesh(new THREE.CircleGeometry(0.14, 12), m); l.position.set(3.6 + k, -0.3, 0.18); arm.add(l);
+  }
+}
+
+/* --- guard pipes along Shijo's curbs (grindable) --- */
+for (const z of [1.82, 14.18]) for (const [a, b] of [[-28.5, -21], [-6.5, 0.5], [3, 10]]){
+  addRail(a, CURB + 0.72, z, b, CURB + 0.72, z, true, M.white);
+}
+// stone benches on the sidewalk (ledges)
+for (const [x0, x1, z0, z1] of [[-28.5, -25, -1.85, -1.15], [-6, -2.5, -1.85, -1.15], [-27.5, -24, 17.15, 17.85], [-5, -1.5, 17.15, 17.85]]) ledge(x0, x1, z0, z1, CURB, CURB + 0.5, M.stone);
+
+/* --- Kiyamachi and the Takase river --- */
+for (const [a, b] of [[-150, -2], [18, 120]]){ flat(-20, -14, a, b, 0.008, M.stone, 1 / 3); flat(-11.5, -8, a, b, 0.008, M.stone, 1 / 3); }
+for (const [a, b] of [[-150, -2], [18, 120]]){
+  box(-14.05, -13.9, -1.1, 0, a, b, M.wallStone, {su:1 / 3});   // canal walls
+  box(-11.6, -11.45, -1.1, 0, a, b, M.wallStone, {su:1 / 3});
+}
+// stone edges of the canal: long ledges to grind (broken by the two footbridges)
+for (const [a, b] of [[Z0, -33], [-31, -17], [-15, -2.4], [18.4, Z1]]){
+  ledge(-14.4, -14, a + 0.2, b - 0.2, 0, 0.3, M.wallStone);
+  ledge(-11.5, -11.1, a + 0.2, b - 0.2, 0, 0.3, M.wallStone);
+}
+for (const zc of [-16, -32]){   // footbridges with wooden handrails (grindable)
+  box(-14.4, -11.1, -0.18, 0.03, zc - 1, zc + 1, M.wood, {su:1 / 2});
+  for (const z of [zc - 0.92, zc + 0.92]) addRail(-14.5, 0.75, z, -11.0, 0.75, z, true, M.wood);
+}
+// a Takase boat moored in the canal
+{
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 7), M.wood); hull.position.set(-12.75, -0.42, -38.5); put(hull);
+  for (const z of [-41.5, -35.5]){ const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 1.2), M.wood); b.position.set(-12.75, -0.2, z); put(b); }
+  for (const z of [-39.5, -38, -36.8]){ const t = cyl(0.25, 0.5, M.wood); t.position.set(-12.75, 0.05, z); put(t); }
+}
+// willows and cherry trees along the canal, low lamps between them
+function willow(x, z, y){
+  const tr = cyl(0.14, 3.6, M.trunk); tr.position.set(x, (y || 0) + 1.8, z); put(tr);
+  solid(x - 0.18, x + 0.18, z - 0.18, z + 0.18, (y || 0) + 3.6);
+  for (let k = 0; k < 3; k++) DRAPES.push({x, y:(y || 0) + 2.7, z, ry:k * Math.PI / 3, s:rnd(0.9, 1.15)});
+  BLOSSOMS.push({x, y:(y || 0) + 4.1, z, r:1.0, c:0x2f5a2a});
+}
+function sakura(x, z, y){
+  const tr = cyl(0.17, 2.4, M.trunk); tr.position.set(x, (y || 0) + 1.2, z); put(tr);
+  solid(x - 0.2, x + 0.2, z - 0.2, z + 0.2, (y || 0) + 2.4);
+  for (let k = 0; k < 5; k++) BLOSSOMS.push({x:x + rnd(-1, 1), y:(y || 0) + rnd(2.6, 3.6), z:z + rnd(-1, 1), r:rnd(0.8, 1.2), c:0xf4b6c8});
+}
+for (let z = Z0 + 3; z < Z1; z += 8){
+  if (inShijo(z) || Math.abs(z + 16) < 2.5 || Math.abs(z + 32) < 2.5) continue;
+  (Math.random() < 0.65 ? willow : sakura)(-14.9, z);
+  if (Math.abs(z + 4 + 16) > 2.5 && Math.abs(z + 4 + 32) > 2.5 && !inShijo(z + 4)) (Math.random() < 0.5 ? willow : sakura)(-10.6, z + 4);
+  lamp(-19.6, z + 2, 0, 4.2);
+}
+
+/* --- Pontocho: a 2.4 m wide stone alley of wooden houses and paper lanterns --- */
+flat(1.6, 4, -150, -2.4, 0.008, M.stone, 1 / 2);
+flat(4, 10, -22, -20.6, 0.008, M.stone, 1 / 2); flat(-8, 1.6, -30, -28.6, 0.008, M.stone, 1 / 2);   // side alleys
+lantern(2.8, 3.3, -3.2, 0.42, 0xfff0d8);   // the big lantern at the entrance
+for (let z = -6; z > Z0 - 30; z -= 8) POOLS.push({x:2.8, y:0.008, z, r:5.5, c:0xffb070});
+{ const s = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.2), glow(0xffffff, {map:canvasTex(64, 280, (g, w, h) => {
+    g.fillStyle = '#f4ead8'; g.fillRect(0, 0, w, h); g.fillStyle = '#7a1414'; g.font = `700 44px ${MIN}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    [...'先斗町'].forEach((c, i) => g.fillText(c, w / 2, 50 + i * 80)); })}));
+  s.position.set(1.52, 2.6, -3.4); s.rotation.y = -Math.PI / 2; put(s); }
+
+/* --- the riverside: a paved strip, kawayuka decks hanging over the bank, stone walls down to the riverbank --- */
+flat(10, 12, -150, SN0, 0.008, M.stone, 1 / 2); flat(8, 12, SN1, 120, 0.008, M.stone, 1 / 2);
+for (const [a, b] of [[-150, SN0], [SN1, 120]]){
+  box(11.6, 12, RB, -0.01, a, b, M.wallStone, {su:1 / 3});
+  box(11.55, 12.05, 0, 0.06, a, b, M.conc);
+  box(34, 34.4, WATER - 0.5, -0.01, a, b, M.wallStone, {su:1 / 3});
+}
+for (let z = -40; z < -10; z += 6.2){   // kawayuka: wooden decks on stilts with lanterns and diners
+  box(9.6, 13.4, 2.9, 3.05, z, z + 5.4, M.wood, {su:1 / 2, cast:true});
+  box(13.3, 13.4, 3.05, 3.9, z, z + 5.4, M.wood);
+  for (const zz of [z + 0.2, z + 5.2]){ const p = cyl(0.07, 3, M.wood); p.position.set(11.8, 1.45, zz); put(p); }
+  for (let k = 0; k < 4; k++) lantern(13.3, 3.95, z + 0.7 + k * 1.33, 0.12, 0xffe2c0);
+  for (let k = 0; k < 2; k++) addPerson(rnd(10.4, 12.8), 3.05, z + rnd(0.8, 4.6), K.group);
+  POOLS.push({x:11, y:0.01, z:z + 2.7, r:4, c:0xffa860});
+}
+
+/* --- the riverbank --- */
+// along the water: a long low stone edge (both top corners grind)
+for (const [a, b] of [[Z0, SN0], [SN1, Z1]]){
+  box(23.3, 24, WATER - 0.2, RB + 0.4, a, b, M.wallStone, {su:1 / 3, cast:true});
+  solid(23.3, 24, a, b, RB + 0.4);
+  for (const x of [23.34, 23.96]) addRail(x, RB + 0.4, a + 0.1, x, RB + 0.4, b - 0.1, false);
+}
+// stairs down from the strip (with handrails), north of the bridge and south of it
+function stairs(zc){
+  const x0 = 12, x1 = 17.2, n = 15;
+  addObs({x:(x0 + x1) / 2, z:zc, a:0, hw:1.4, pts:[[-(x1 - x0) / 2, 0], [(x1 - x0) / 2, RB]]});
+  // the steps you see; you ride the smooth line through their noses (collision above)
+  for (let i = 0; i < n; i++) box(x0 + (x1 - x0) * i / n, x0 + (x1 - x0) * (i + 1) / n + 0.001, RB, RB * (i + 0.5) / n, zc - 1.4, zc + 1.4, M.conc, {cast:true});
+  const yAt = x => RB * (x - x0) / (x1 - x0);
+  for (const z of [zc - 1.25, zc + 1.25]) addRail(x0 + 0.25, yAt(x0 + 0.25) + 0.85, z, x1 - 0.2, yAt(x1 - 0.2) + 0.85, z, true, M.metal);
+  POOLS.push({x:(x0 + x1) / 2, y:-1.3, z:zc, r:5});
+}
+stairs(-7); stairs(23.4);
+// a long ramp down along the wall (rideable both ways)
+addObs({x:13.2, z:-28, a:Math.PI / 2, hw:1.2, pts:[[-8, RB], [6, 0], [16.3, 0]], mat:M.conc, floor:RB});   // tops out on a raised walk that runs on north
+addRail(14.25, RB + 0.88, -20.3, 14.25, 0.88, -33.8, true, M.metal);
+// benches (ledges) and the river lamps
+for (const [z, x] of [[-12, 18.2], [-18.5, 19.5], [-25, 18.2], [-31.5, 19.5], [-38, 18.2], [24.5, 19]]) ledge(x, x + 0.55, z - 1, z + 1, RB, RB + 0.45, M.wood);
+for (let z = Z0 + 2; z < SN0 - 1; z += 8){ LAMPS.push({x:12.35, y:RB, z, h:1.1, low:true}); POOLS.push({x:13.5, y:RB, z, r:6}); }
+for (let z = SN1 + 3; z < Z1; z += 8){ LAMPS.push({x:12.35, y:RB, z, h:1.1, low:true}); POOLS.push({x:13.5, y:RB, z, r:6}); }
+sakura(16.2, -41, RB); willow(16.4, -14.5, RB); sakura(16.2, 28, RB);
+// the famous couples sitting evenly spaced along the Kamo
+for (let z = -11; z > Z0 + 1; z -= 5){ addPerson(22.6, RB, z, K.group); addPerson(22.65, RB, z - 0.55, K.group); }
+
+/* --- Shijo Ohashi: the bridge, its parapets (grindable) and lamps --- */
+box(12, 34, -1.0, -0.005, SN0, SN1, M.darkConc, {su:1 / 4});
+box(12, 24, RB, -1.0, SN0, SN1, M.wallStone, {su:1 / 3});
+for (const x of [26, 30.8]) box(x, x + 1.2, WATER - 1, -1, SN0 + 0.4, SN1 - 0.4, M.darkConc);
+flat(12, 34, 2, 14, 0.002, M.asphalt, 1 / 6);
+for (const [z0, z1, out] of [[SN0, SN0 + 0.4, SN0 - 0.3], [SN1 - 0.4, SN1, SN1 + 0.3]]){
+  box(12, 34, 0, 0.82, z0, z1, M.white, {solid:true, cast:true});
+  for (const z of [z0 + 0.04, z1 - 0.04]) addRail(12.1, 0.82, z, 33.9, 0.82, z, false);
+  for (let x = 13; x < 34; x += 5.4){
+    const p = cyl(0.07, 4.2, M.post); p.position.set(x, 1.1, out); put(p);
+    LAMPS.push({x, y:3.2, z:out, h:0, head:true});
+    POOLS.push({x, y:CURB, z:(z0 + z1) / 2 + (z0 < 0 ? 1.4 : -1.4), r:6});
+  }
+}
+
+/* --- the east bank: a green belt with a fence, Kawabata-dori, and the kabuki theatre --- */
+for (const [a, b] of [[Z0 - 60, SN0], [SN1, Z1 + 60]]){
+  flat(34.4, 40, a, b, 0.01, M.grass, 1 / 3);
+  box(34.1, 34.3, 0, 1.05, a, b, M.post); solid(34.0, 34.4, Math.max(a, Z0), Math.min(b, Z1), 1.05);
+  for (let z = a + 4; z < b - 3; z += 9) sakura(37.2, z);
+  for (let z = a + 8; z < b - 3; z += 12) lamp(39.6, z, 0, 5);
+}
+{
+  // the theatre: a big tiled roof, gables, a row of signboards and lanterns
+  const x0 = 48.5, x1 = 58, z0 = -17, z1 = -2.6;
+  building(x0, x1, z0, z1, 10.5, {mat:lam(0xc8beb0, {map:facade('#d8d0c0', 6, 4, 0)[0], emissive:0x2a2018})});
+  const roofShape = new THREE.Shape([new THREE.Vector2(z0 - 0.6, 10.5), new THREE.Vector2(z1 + 0.6, 10.5), new THREE.Vector2((z0 + z1) / 2, 15)].map(v => v));
+  const rg = new THREE.ExtrudeGeometry(roofShape, {depth:x1 - x0 + 1.2, bevelEnabled:false}); rg.rotateY(-Math.PI / 2); rg.translate(x1 + 0.6, 0, 0);
+  const rm = new THREE.Mesh(rg, M.tile); put(rm);
+  box(51.5, 55, 13, 16.6, -9.5, -6.5, M.white); box(51.2, 55.3, 16.6, 17, -9.8, -6.2, M.tile);   // tower
+  const gable = new THREE.Shape([new THREE.Vector2(-2.6, 0), new THREE.Vector2(2.6, 0), new THREE.Vector2(0, 2.4)]);
+  const gg = new THREE.ExtrudeGeometry(gable, {depth:2.4, bevelEnabled:false}); const gm = new THREE.Mesh(gg, M.tile); gm.position.set(53.25, 10.5, -4.4); put(gm);
+  const NAMES = ['顔見世', '大入', '吉例', '歌舞伎', '花形', '千穐楽', '寿', '口上', '初春', '襲名'];
+  NAMES.forEach((t, i) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 2.4), glow(0xffffff, {map:canvasTex(64, 200, (g, w, h) => {
+      g.fillStyle = '#f6f0e0'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2a1a10'; g.lineWidth = 3; g.strokeRect(2, 2, w - 4, h - 4);
+      g.fillStyle = '#140c08'; g.font = `900 36px ${MIN}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const ch = [...t]; ch.forEach((c, k) => g.fillText(c, w / 2, h / 2 + (k - (ch.length - 1) / 2) * 40));
+    })}));
+    m.position.set(x0 + 0.6 + i * 0.93, 6.6, z1 + 0.07); put(m);
+  });
+  box(x0, x1, 5.2, 5.35, z1, z1 + 1.1, M.tile);   // a little roof over the entrance
+  for (let x = x0 + 0.4; x < x1; x += 0.75) lantern(x, 4.75, z1 + 0.85, 0.24, 0xff4a3a);
+  // the entrance: three lit doorways in dark wood, with playbills between them
+  const front = canvasTex(512, 160, (g, w, h) => {
+    g.fillStyle = '#2a120c'; g.fillRect(0, 0, w, h);
+    for (let k = 0; k < 3; k++){
+      const x = 40 + k * 160, gr = g.createLinearGradient(0, 20, 0, h);
+      gr.addColorStop(0, '#ffe0a0'); gr.addColorStop(1, '#d4782c'); g.fillStyle = gr; g.fillRect(x, 24, 112, h - 24);
+      g.fillStyle = '#2a120c'; for (let b = x + 14; b < x + 112; b += 14) g.fillRect(b, 24, 3, h - 24);
+    }
+    for (const x of [8, 160, 320, 476]){ g.fillStyle = '#f2e6cc'; g.fillRect(x, 30, 28, 90); g.fillStyle = '#7a1414'; g.fillRect(x + 4, 36, 20, 6); g.fillRect(x + 4, 50, 20, 40); }
+    g.fillStyle = '#f2e6cc'; g.font = `900 22px ${MIN}`; g.textAlign = 'center'; g.fillText('歌 舞 伎', w / 2, 16);
+  });
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 - 0.4, 3.4), glow(0xffffff, {map:front})); door.position.set((x0 + x1) / 2, 1.7 + CURB, z1 + 0.06); put(door);
+  POOLS.push({x:53, y:CURB, z:0, r:9, c:0xffa070});
+}
+
+/* --- barricades where the open streets leave the map --- */
+function barricade(x0, x1, z0, z1, y){
+  box(x0, x1, (y || 0) + 0.25, (y || 0) + 1.0, z0, z1, M.stripe, {su:0.5, sv:1.3});
+  const ns = x1 - x0 > z1 - z0, len = ns ? x1 - x0 : z1 - z0;
+  for (let t = 0.5; t < len; t += 2) BLINK.push({x:ns ? x0 + t : (x0 + x1) / 2, y:(y || 0) + 1.1, z:ns ? (z0 + z1) / 2 : z0 + t});
+}
+for (const [a, b] of [[-64, -57], [-50, -30], [-20, -14.4], [-11.1, -8], [1.6, 4], [10, 12], [34.4, 40], [40, 48]]){ barricade(a, b, Z0 + 0.05, Z0 + 0.25); }
+for (const [a, b] of [[-50, -30], [-20, -14.4], [-11.1, -8], [8, 12], [34.4, 40], [40, 48]]){ barricade(a, b, Z1 - 0.25, Z1 - 0.05); }
+barricade(12, 23.3, Z0 + 0.05, Z0 + 0.25, RB); barricade(12, 23.3, Z1 - 0.25, Z1 - 0.05, RB);
+barricade(X0 + 0.05, X0 + 0.25, -2, 18); barricade(X1 - 0.25, X1 - 0.05, -2, 18);
+
+/* --- people out for the evening --- */
+for (let i = 0; i < 12; i++) addPerson(rnd(-28, 8), CURB, pick([-1.5, 17.5]) + rnd(-0.2, 0.2), K.group);
+for (let i = 0; i < 8; i++) addPerson(pick([-49.3, -30.7]), CURB, pick([rnd(-40, -4), rnd(20, 28)]), K.group);
+for (let i = 0; i < 6; i++) addPerson(pick([-63.3, -57.7]), 0, rnd(-42, -5), K.group);
+for (let i = 0; i < 4; i++) addPerson(pick([1.95, 3.65]), 0, rnd(-40, -6), K.group);
+for (let i = 0; i < 6; i++) addPerson(rnd(14, 32), CURB, pick([-1.5, 17.5]), K.group);
+for (let i = 0; i < 4; i++) addPerson(pick([-19, -9]), 0, rnd(-40, -6), K.group);
+
+/* --- draw the collected lamps, lanterns, trees and light pools --- */
+inst(new THREE.CylinderGeometry(0.07, 0.09, 1, 8).translate(0, 0.5, 0), M.post, LAMPS.filter(l => !l.head), (o, l) => { o.position.set(l.x, l.y, l.z); o.scale.set(1, l.h, 1); });
+inst(new THREE.SphereGeometry(0.26, 12, 8), M.lampHead, LAMPS, (o, l) => { o.position.set(l.x, l.y + l.h + (l.low ? 0.05 : 0.15), l.z); if (l.low) o.scale.setScalar(0.6); });
+inst(new THREE.SphereGeometry(1, 12, 10), M.lantern, LANTERNS, (o, l) => { o.position.set(l.x, l.y, l.z); o.scale.set(l.r, l.r * 1.35, l.r); });
+inst(new THREE.PlaneGeometry(2.6, 2.8), M.willow, DRAPES, (o, d) => { o.position.set(d.x, d.y, d.z); o.rotation.y = d.ry; o.scale.setScalar(d.s); });
+inst(new THREE.IcosahedronGeometry(1, 1), lam(0xffffff, {emissive:0x150a10}), BLOSSOMS, (o, b) => { o.position.set(b.x, b.y, b.z); o.scale.setScalar(b.r); });
+inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), M.pool, POOLS, (o, p) => { o.position.set(p.x, p.y + 0.02, p.z); o.scale.set(p.r, 1, p.r); });
+const blinkM = glow(0xff2a1a);
+inst(new THREE.SphereGeometry(0.07, 8, 6), blinkM, BLINK, (o, b) => o.position.set(b.x, b.y, b.z));
+
+/* --- a few real lights where it matters; everything else glows on its own --- */
+for (const [x, y, z, c, i, d] of [[-40, 6, 8, 0xffd9a8, 1.4, 34], [-12, 6, 8, 0xffc890, 1.1, 30], [2.8, 3.5, -16, 0xffa060, 1.3, 22],
+  [23, 5, 8, 0xffd0a0, 1.1, 30], [18, 2, -26, 0xffc080, 1.0, 26], [53, 6, 2, 0xff9a70, 1.3, 26], [-60.5, 6, -22, 0xe0ecff, 1.0, 30]]){
+  const L = new THREE.PointLight(c, i, d, 1.4); L.position.set(x, y, z); put(L);
+}
+const near = new THREE.PointLight(0xffe0c0, 0.55, 9, 1.5); put(near);   // a soft light that stays with you so you never ride in the dark
+
+K.light = {sky:nightSky, fog:new THREE.Fog(0x110f26, 26, 150), hemi:[0x6c7cc8, 0x261c2c, 0.6],
+  sun:[0xa8b8ff, 0.42, [-18, 34, -12]], follow:true, shadow:{left:-30, right:30, top:30, bottom:-30, near:1, far:90}, exposure:1.12};
+let tt = 0;
+K.update = dt => {
+  tt += dt;
+  waterT.offset.y -= dt * 0.035;
+  blinkM.color.setScalar(Math.sin(tt * 5) > 0 ? 1 : 0.15);
+  near.position.set(P.pos.x, P.pos.y + 3, P.pos.z);
+};
+useMap(PARK);
+return K;
+})();
+PARK.light = {sky:parkSky, fog:scene.fog, hemi:[0xa8b6ff, 0x6b4636, 0.75], sun:[0xffd0a0, 1.7, [-34, 30, -26]], follow:false,
+  shadow:{left:-48, right:48, top:48, bottom:-48, near:1, far:140}, exposure:1.05};
+PARK.short = 'パーク';
+
+// switch the whole world over: meshes, collision, sky, light, and where you start
+function setMap(id){
+  const m = MAPS[id] || PARK;
+  for (const k in MAPS) MAPS[k].group.visible = MAPS[k] === m;
+  useMap(m);
+  Object.assign(START, m.start);
+  const L = m.light;
+  scene.background = L.sky; scene.fog = L.fog;
+  hemi.color.setHex(L.hemi[0]); hemi.groundColor.setHex(L.hemi[1]); hemi.intensity = L.hemi[2];
+  sun.color.setHex(L.sun[0]); sun.intensity = L.sun[1]; sun.position.set(...L.sun[2]); sun.target.position.set(0, 0, 0);
+  Object.assign(sun.shadow.camera, L.shadow); sun.shadow.camera.updateProjectionMatrix();
+  renderer.toneMappingExposure = L.exposure;
+  resetPlayer(); P.pos.y = heightAt(P.pos.x, P.pos.z);
+  $('mapNow').textContent = m.name;
+}
+function followSun(){
+  const L = CUR.light; if (!L.follow) return;
+  // keep the shadow box centred on the skater (snapped to whole metres so the edges don't shimmer)
+  const x = Math.round(P.pos.x), z = Math.round(P.pos.z);
+  sun.position.set(x + L.sun[2][0], L.sun[2][1], z + L.sun[2][2]); sun.target.position.set(x, 0, z); sun.target.updateMatrixWorld();
 }
 
 /* ---------- dust ---------- */
@@ -1636,6 +2352,7 @@ function hostRoom(){
     conn.on('open', () => {
       if (NET.conns.size >= 3){ conn.send({t:'full'}); setTimeout(() => conn.close(), 400); return; }
       NET.conns.set(conn.peer, conn);
+      conn.send({t:'map', m:CUR.id, id:NET.myId});   // the room skates the host's map
     });
     conn.on('data', d => {
       if (!d || typeof d !== 'object' || !NET.conns.has(conn.peer)) return;
@@ -1775,7 +2492,7 @@ function netEvent(ev){ if (NET.role !== 'off') netSend(Object.assign({t:'ev'}, e
 const r3 = v => Math.round(v * 1000) / 1000;
 function sendState(){
   if (NET.role === 'off') return;
-  netSend({t:'s', n:NET.name, c:NET.color, cid:myChar.id, sc:score,
+  netSend({t:'s', n:NET.name, c:NET.color, cid:myChar.id, sc:score, mp:CUR.id,
     x:r3(P.pos.x), y:r3(P.pos.y), z:r3(P.pos.z), vx:r3(P.vel.x), vy:r3(P.vel.y), vz:r3(P.vel.z),
     yw:r3(P.yaw), st:P.state, nx:r3(P.N.x), ny:r3(P.N.y), nz:r3(P.N.z),
     tk:P.trick ? P.trick.code : '', tp:r3(P.trickP), gb:P.grabbing ? 1 : 0, ch:P.charging ? 1 : 0, cg:r3(P.charge),
@@ -1826,6 +2543,12 @@ function dropRemote(id, announce){
 function handleMsg(d){
   if (typeof d.id !== 'string' || d.id === NET.myId) return;
   if (d.t === 'bye'){ dropRemote(d.id, true); return; }
+  if (d.t === 'map'){
+    if (NET.role === 'client' && d.id === ROOM_PREFIX + NET.code && MAPS[d.m] && d.m !== CUR.id){
+      setMap(d.m); popup('マップ:' + CUR.name, 'good', 'ホストのマップで滑ります');
+    }
+    return;
+  }
   let R = NET.remotes.get(d.id);
   if (d.t === 's'){
     const fresh = !R;
@@ -1838,8 +2561,9 @@ function handleMsg(d){
       const ch = charById(d.cid); scene.remove(R.S.root); R.S = makeSkater(ch); R.cid = ch.id;
     }
     const sc = num(d.sc, 0, 1e9, 0); if (sc !== R.score){ R.score = sc; renderBoard(); }
+    const mp = MAPS[d.mp] ? d.mp : 'park'; if (mp !== R.map){ R.map = mp; renderBoard(); }
     const Q = R.Q, now = performance.now();
-    R.target.set(num(d.x, -60, 60, 0), num(d.y, -5, 20, 0), num(d.z, -60, 60, 0));
+    R.target.set(num(d.x, -80, 80, 0), num(d.y, -5, 20, 0), num(d.z, -80, 80, 0));
     R.vel.set(num(d.vx, -30, 30, 0), num(d.vy, -30, 30, 0), num(d.vz, -30, 30, 0));
     if (Q.pos.distanceTo(R.target) > 4) Q.pos.copy(R.target);
     R.yawT = num(d.yw, -1e4, 1e4, 0); R.recv = now; R.last = now;
@@ -1875,6 +2599,9 @@ function updateRemotes(dt){
     if (Q.trick) Q.trickP = Math.min(1, Q.trickP + dt / Q.trick.dur);
     if (Q.pushing) Q.pushPhase = (Q.pushPhase + dt / 0.72) % 1;
     if (Q.state === 'bail') Q.bailT += dt;
+    const here = R.map === CUR.id;   // someone skating the other map isn't drawn in this one
+    R.S.root.visible = R.tag.sp.visible = R.call.sp.visible = here;
+    if (!here) continue;
     pose(R.S, Q, dt);
     R.tag.sp.position.set(Q.pos.x, Q.pos.y + 2.05, Q.pos.z);
     R.call.sp.position.set(Q.pos.x, Q.pos.y + 2.55 + (1.3 - R.callT) * 0.3, Q.pos.z);
@@ -1883,7 +2610,7 @@ function updateRemotes(dt){
 }
 function renderBoard(){
   const rows = [{name:NET.name || 'あなた', score, color:NET.color, me:true}];
-  for (const R of NET.remotes.values()) rows.push({name:R.name, score:R.score, color:R.color});
+  for (const R of NET.remotes.values()) rows.push({name:R.name + (R.map && R.map !== CUR.id ? '(' + MAPS[R.map].short + ')' : ''), score:R.score, color:R.color});
   rows.sort((a, b) => b.score - a.score);
   for (const list of [$('board'), $('lobbyBoard')]){
     list.textContent = '';
@@ -1903,13 +2630,15 @@ function showScreen(id){
   for (const s of document.querySelectorAll('#start .screen')) s.hidden = s.id !== id;
   for (const m of ['netMsg', 'joinMsg']){ $(m).textContent = ''; $(m).classList.remove('bad'); }
   charView = id === 'menuChar';
+  mapView = id === 'menuMap';
   $('start').classList.toggle('charmode', charView);
-  const focus = {menuMain:'go', menuOnline:'nameIn', menuJoin:'codeIn', menuRoom:'startRoomBtn', menuChar:'charOk'}[id];
+  $('start').classList.toggle('mapmode', mapView);
+  const focus = {menuMain:'go', menuOnline:'nameIn', menuJoin:'codeIn', menuRoom:'startRoomBtn', menuChar:'charOk', menuMap:'mapOk'}[id];
   if (focus) setTimeout(() => $(focus).focus(), 0);
 }
 
 /* character select: picking a card swaps your skater right away; the camera circles them */
-let charView = false, charOrbit = 0;
+let charView = false, charOrbit = 0, mapView = false, mapOrbit = 0;
 // drag anywhere above the panel (mouse or finger) to turn the skater a full 360°; ← → keys work too
 const charDrag = {on:false, x:0, idle:0};
 $('start').addEventListener('pointerdown', e => {
@@ -1949,6 +2678,25 @@ function renderChars(){
 $('charNow').textContent = myChar.name;
 $('charBtn').addEventListener('click', () => { renderChars(); showScreen('menuChar'); });
 $('charOk').addEventListener('click', () => showScreen('menuMain'));
+/* map select: picking a card switches the world right away */
+function renderMaps(){
+  const list = $('mapList'); list.textContent = '';
+  for (const m of Object.values(MAPS)){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'charcard'; b.setAttribute('aria-pressed', String(m === CUR));
+    const nm = document.createElement('span'); nm.className = 'cn'; nm.textContent = m.name;
+    b.append(nm);
+    b.addEventListener('click', () => {
+      setMap(m.id);
+      try { localStorage.setItem('skatepark-map', m.id); } catch (e){}
+      renderMaps(); list.querySelectorAll('.charcard')[Object.values(MAPS).indexOf(m)].focus();
+    });
+    list.append(b);
+  }
+  $('mapDesc').textContent = CUR.desc;
+}
+$('mapBtn').addEventListener('click', () => { renderMaps(); showScreen('menuMap'); });
+$('mapOk').addEventListener('click', () => showScreen('menuMain'));
 try { $('nameIn').value = localStorage.getItem('skatepark-name') || ''; } catch (e){}
 $('onlineBtn').addEventListener('click', () => { initAudio(); showScreen('menuOnline'); });
 $('toJoinBtn').addEventListener('click', () => { myName(); showScreen('menuJoin'); });
@@ -1981,6 +2729,14 @@ function updateCamera(dt){
     camState.init = false;
     return;
   }
+  if (mapView){   // map select: a slow fly-around high over the whole map
+    mapOrbit += dt * 0.12;
+    const v = CUR.view;
+    camera.position.set(v.x + Math.sin(mapOrbit) * v.r, v.h, v.z + Math.cos(mapOrbit) * v.r);
+    camera.lookAt(v.x, 0, v.z);
+    camState.init = false;
+    return;
+  }
   const hs = Math.hypot(P.vel.x, P.vel.z);
   if ((P.state === 'ride' && hs > 1.5) || P.state === 'grind'){
     const va = Math.atan2(P.vel.x, P.vel.z);
@@ -1988,8 +2744,20 @@ function updateCamera(dt){
   }
   const dist = 5.6, height = 2.5;
   const want = new V3(P.pos.x - Math.sin(camState.yaw) * dist, P.pos.y + height, P.pos.z - Math.cos(camState.yaw) * dist);
-  want.x = clamp(want.x, -(AX + DECK) + 0.4, AX + DECK - 0.4);
-  want.z = clamp(want.z, -(AZ + DECK) + 0.4, AZ + DECK - 0.4);
+  const B = CUR.bounds;
+  want.x = clamp(want.x, B.x0 + 0.4, B.x1 - 0.4);
+  want.z = clamp(want.z, B.z0 + 0.4, B.z1 - 0.4);
+  // something between you and the camera: pull the camera in so it stays on your side of the wall
+  // (city maps check the whole sight line; the park only minds real walls so the ramps keep their old view)
+  for (let s = 0.15; s <= 1.001; s += 0.085){
+    const x = P.pos.x + (want.x - P.pos.x) * s, z = P.pos.z + (want.z - P.pos.z) * s;
+    const clear = CUR.tightCam ? P.pos.y + 1 + (want.y - P.pos.y - 1) * s - 0.3 : P.pos.y + 4;
+    if (heightAt(x, z) > clear){
+      const k = Math.max(0.12, s - 0.1);
+      want.x = P.pos.x + (want.x - P.pos.x) * k; want.z = P.pos.z + (want.z - P.pos.z) * k;
+      break;
+    }
+  }
   want.y = Math.max(want.y, heightAt(want.x, want.z) + 0.8);
   const look = new V3(P.pos.x, P.pos.y + 1.0, P.pos.z);
   if (!camState.init){ camState.pos.copy(want); camState.look.copy(look); camState.init = true; }
@@ -2019,7 +2787,9 @@ function frame(now){
   if (n === 8) acc = 0;
   pose(ME, P, dt);
   updateRemotes(dt);
+  if (CUR.update) CUR.update(dt);
   updateCamera(dt);
+  followSun();
   scoreEl.textContent = score.toLocaleString();
   bestEl.textContent = 'ベストコンボ ' + best.toLocaleString();
   speedEl.firstChild.nodeValue = Math.round(P.vel.length() * 3.6);
@@ -2031,7 +2801,8 @@ function frame(now){
 
 function start(data){
   if (data && typeof data.score === 'number') score = data.score;
-  P.pos.y = heightAt(P.pos.x, P.pos.z);
+  let saved = 'park'; try { saved = localStorage.getItem('skatepark-map') || 'park'; } catch (e){}
+  setMap(saved);
   requestAnimationFrame(t => { last = t; frame(t); });
 }
 $('go').addEventListener('click', startGame);
