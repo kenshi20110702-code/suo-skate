@@ -193,6 +193,7 @@ button:disabled{opacity:.45;cursor:default}
   <span class="k">L1 / R1</span><span>空中でスピン</span>
   <span class="k">左スティック ↑ / ↓ + レール</span><span>ノーズスライド / テールスライド(グラインド中に倒すと切り替え)</span>
   <span class="k">グラインド中</span><span>✕ で飛び降り、右スティックで飛び降りながらトリック</span>
+  <span class="k">L3(左スティック押し込み)</span><span>ボードを降りて歩く / また乗る(歩くときは R2 で走る、✕ でジャンプ)</span>
   <span class="k">クリエイト</span><span>スタート地点に戻る</span>
  </div>
  <div class="hgrid" id="helpKb">
@@ -208,6 +209,7 @@ button:disabled{opacity:.45;cursor:default}
   <span class="k">M 長押し</span><span>マニュアル(W S でバランス)</span>
   <span class="k">レール</span><span>近くに着地すれば自動でグラインド(A D でバランス)</span>
   <span class="k">W / S + レール</span><span>ノーズスライド / テールスライド(グラインド中に押すと切り替え。抜けるときは板が自動で向きを戻す)</span>
+  <span class="k">B</span><span>ボードを降りて歩く / また乗る(歩くときは W S で前後、Shift で走る、Space でジャンプ)</span>
   <span class="k">R ・ V</span><span>スタート地点に戻る ・ 音のオン/オフ</span>
   <span class="k">Esc</span><span>最初の画面に戻る</span>
   <span class="k">PS5</span><span>コントローラーのボタンを押すと切り替わります</span>
@@ -230,7 +232,7 @@ button:disabled{opacity:.45;cursor:default}
           <span class="mode-s">部屋コードで最大4人。ログイン不要</span>
         </button>
       </div>
-      <p class="keys"><kbd>W</kbd> プッシュ ・ <kbd>Space</kbd> オーリー ・ <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>I</kbd><kbd>U</kbd><kbd>Y</kbd> トリック ・ <kbd>T</kbd> すおの十八番 ・ <kbd>M</kbd> マニュアル ・ PS5コントローラーはどれかのボタンでオフライン開始</p>
+      <p class="keys"><kbd>W</kbd> プッシュ ・ <kbd>Space</kbd> オーリー ・ <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>I</kbd><kbd>U</kbd><kbd>Y</kbd> トリック ・ <kbd>T</kbd> すおの十八番 ・ <kbd>M</kbd> マニュアル ・ <kbd>B</kbd> 降りて歩く ・ PS5コントローラーはどれかのボタンでオフライン開始</p>
       <button id="charBtn" type="button" class="charpick">
         <span class="charpick-l">キャラクター選択</span>
         <span class="charpick-now">いま:<b id="charNow">すお</b></span>
@@ -777,6 +779,7 @@ const P = {
   airTime:0, spin:0, trick:null, trickT:0, trickP:0, grabbing:false, grabItem:null, grabT:0,
   grind:null, railCool:null, railCoolT:0, bailT:0, bailSide:1, pushPhase:0, pushing:false, landSquash:0,
   slideT:0, dustT:0, manual:null, autoYaw:null,
+  onFoot:false, walkGround:true, walkSp:0, stepD:0,   // off the board: walking / running (state 'walk')
 };
 const anim = ME.anim;
 let score = 0, best = 0, started = false;
@@ -789,6 +792,10 @@ const isKey = (...c) => c.some(k => keys[k]);
 const BLOCK = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 /* shared actions (keyboard and controller both call these) */
 function jumpPress(){
+  if (P.state === 'walk'){   // on foot: a little hop
+    if (P.walkGround){ P.vel.y = 5.2; P.walkGround = false; P.pos.y += 0.01; }
+    return;
+  }
   if (P.state === 'ride'){ P.charging = true; P.charge = 0; }
   else if (P.state === 'grind') jumpOffRail();
   else if (P.state === 'air' && P.sinceGround < 0.14 && !P.ollied) ollie(0);
@@ -872,6 +879,7 @@ addEventListener('keydown', e => {
   if (!started && charView && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')){ charOrbit += e.code === 'ArrowLeft' ? 0.2 : -0.2; charDrag.idle = 3; return; }
   if (!started) return;
   if (e.code === 'KeyH') toggleHelp();
+  if (e.code === 'KeyB') toggleBoard();
   if (e.code === 'KeyR') resetPlayer();
   if (e.code === 'KeyV') toggleMute();
   if (e.code === 'Space') jumpPress();
@@ -932,6 +940,7 @@ function padButtons(){
   if (released(3)) manualRelease();
   if (pressed(8)) resetPlayer();
   if (pressed(9)) toggleHelp();
+  if (pressed(10)) toggleBoard();   // L3 (click the left stick) = step off / back on the board
   if (pressed(11)) trickPress(TRICKS.KeyT);   // R3 (click the right stick) = triple heelflip
 }
 // Right stick: one flick = one trick, on the ground or in the air
@@ -1021,6 +1030,7 @@ const SFX = {
   grindOn(){ burst(0.12, 'highpass', 2800, 1, 0.35); thump(320, 160, 0.08, 0.25); },
   bail(){ thump(95, 35, 0.35, 0.8); burst(0.6, 'bandpass', 1200, 1, 0.35, 250); burst(0.25, 'highpass', 2500, 1, 0.2, 0, 0.25); },
   seam(v){ burst(0.035, 'bandpass', 1500, 2.5, v); thump(140, 70, 0.05, v * 0.8); },
+  step(v){ thump(120, 60, 0.06, v); burst(0.04, 'lowpass', 900, 0.7, v * 0.7); },
 };
 const CHEER_VOL = 0.35;   // overall crowd loudness
 // crowd cheer: roar of filtered noise + rising "woo" voices + scattered claps
@@ -1919,7 +1929,7 @@ function bail(reason){
 }
 function resetPlayer(){
   P.pos.set(START.x, 0, START.z); P.vel.set(0, 0, -0.01); P.yaw = START.yaw;
-  P.state = 'ride'; P.trick = null; P.grabbing = false; P.grind = null; P.charging = false; P.slideT = 0; P.manual = null;
+  P.state = P.onFoot ? 'walk' : 'ride'; P.walkGround = true; P.trick = null; P.grabbing = false; P.grind = null; P.charging = false; P.slideT = 0; P.manual = null;
   P.sN.set(0, 1, 0); combo.items = []; renderCombo(); $('balance').hidden = true;
   camState.yaw = START.yaw; camState.init = false;
 }
@@ -2167,11 +2177,117 @@ function bailStep(dt){
   }
 }
 
+// on foot: the rider turns to face the way they walk, legs and arms swing, the board rides under one arm
+function poseWalk(S, Q, dt){
+  const {boardPivot, riderG, rig, torsoG, headG, anim} = S;
+  const sp = Q.walkSp || 0, run = clamp((sp - 2.2) / 2.5, 0, 1), moving = clamp(sp / 0.6, 0, 1);
+  const stride = 0.17 + 0.25 * run;                         // half a step, in metres
+  anim.walkPh = ((anim.walkPh || 0) + sp * dt / (stride * 4) * TAU) % (TAU * 100);
+  const ph = anim.walkPh, air = Q.walkGround === false;
+  riderG.rotation.set(0, -Math.PI / 2, 0);                  // rider's +x (face) now points along the travel direction
+  const hipY = 0.88 - 0.06 * run + Math.abs(Math.cos(ph)) * (0.02 + 0.05 * run) * moving - (air ? 0.08 : 0);
+  for (let i = 0; i < 2; i++){
+    const s = i === 0 ? 1 : -1, p = ph + i * Math.PI;
+    const lift = air ? 0.18 - i * 0.08 : Math.max(0, Math.cos(p)) * (0.07 + 0.14 * run) * moving;   // the swinging foot comes up
+    P_hip[i].set(-0.02, hipY, s * 0.1);
+    P_foot[i].set(Math.sin(p) * stride * moving, lift, s * 0.11);
+    ik(P_hip[i], P_foot[i], 0.46, 0.46, KNEE, P_knee[i]);
+    setBetween(rig.thigh[i], P_hip[i], P_knee[i]);
+    setBetween(rig.shin[i], P_knee[i], P_foot[i]);
+    rig.knee[i].position.copy(P_knee[i]);
+    rig.shoe[i].rotation.set(0, 0, 0);
+    rig.shoe[i].position.set(P_foot[i].x + 0.03, P_foot[i].y + 0.045, P_foot[i].z);
+  }
+  const th = 0.05 + 0.18 * run;                             // lean into a run
+  torsoG.position.set(-0.02, hipY, 0); torsoG.rotation.set(0, Math.sin(ph) * 0.12 * moving, -th);
+  const ux = Math.sin(th), uy = Math.cos(th);
+  const sx = -0.02 + ux * 0.47, sy = hipY + uy * 0.47;
+  headG.position.set(-0.02 + ux * 0.74, hipY + uy * 0.74, 0); headG.rotation.set(0, 0, -th * 0.3);
+  for (let i = 0; i < 2; i++){
+    const s = i === 0 ? 1 : -1;
+    P_sh[i].set(sx, sy, s * 0.2);
+    if (i === 1) P_hand[i].set(sx - 0.04 + Math.sin(ph) * 0.03 * moving, sy - 0.47, -0.27);   // this hand holds the board
+    else P_hand[i].set(sx - Math.sin(ph) * (0.12 + 0.22 * run) * moving, sy - 0.5 + 0.12 * run, 0.24);
+  }
+  for (let i = 0; i < 2; i++){
+    ik(P_sh[i], P_hand[i], 0.29, 0.28, ELBOW, P_elb[i]);
+    setBetween(rig.upper[i], P_sh[i], P_elb[i]);
+    setBetween(rig.sleeve[i], P_sh[i], _t2.lerpVectors(P_sh[i], P_elb[i], 0.5));
+    rig.elbow[i].position.copy(P_elb[i]);
+    setBetween(rig.fore[i], P_elb[i], P_hand[i]);
+    rig.hand[i].position.copy(P_hand[i]);
+  }
+  // board on its edge beside the leg, gripped at the top edge (rider frame → root frame: x' = -z, z' = x)
+  const hd = P_hand[1];
+  boardPivot.position.set(-hd.z + 0.03, hd.y - 0.09, hd.x);
+  boardPivot.rotation.set(0, 0, Math.PI / 2);
+}
+
+/* on foot: walk (W / left stick), run (Shift / R2), hop (Space / ✕); A D turn like on the board */
+const WALK_SP = 1.8, RUN_SP = 5.5;
+// a wall, or a slope too steep to walk up (curbs and stairs are fine)
+function footBlocked(x, z, ux, uz){
+  const h = heightAt(x, z);
+  if (h > P.pos.y + 0.45) return true;
+  return P.walkGround && h > P.pos.y + 0.02 && heightAt(x + ux * 0.3, z + uz * 0.3) > P.pos.y + 0.45;
+}
+function walkStep(dt){
+  P.yaw += turnInput() * 2.8 * dt;
+  const fwd = clamp((isKey('KeyW', 'ArrowUp') ? 1 : 0) - (isKey('KeyS', 'ArrowDown') ? 1 : 0) - pad.ly, -1, 1);
+  const run = isKey('ShiftLeft', 'ShiftRight') || pad.r2 > 0.25;
+  const target = fwd > 0 ? fwd * (run ? RUN_SP : WALK_SP) : fwd * WALK_SP * 0.6;   // backing up is slower
+  const k = Math.min(1, (P.walkGround ? 10 : 1.5) * dt);
+  P.vel.x += (Math.sin(P.yaw) * target - P.vel.x) * k;
+  P.vel.z += (Math.cos(P.yaw) * target - P.vel.z) * k;
+  const sp = Math.hypot(P.vel.x, P.vel.z), ux = sp > 0.01 ? P.vel.x / sp : 0, uz = sp > 0.01 ? P.vel.z / sp : 0;
+  let nx = P.pos.x + P.vel.x * dt, nz = P.pos.z + P.vel.z * dt;
+  if (footBlocked(nx, nz, ux, uz)){
+    if (!footBlocked(nx, P.pos.z, ux, 0)){ nz = P.pos.z; P.vel.z = 0; }
+    else if (!footBlocked(P.pos.x, nz, 0, uz)){ nx = P.pos.x; P.vel.x = 0; }
+    else { nx = P.pos.x; nz = P.pos.z; P.vel.x = P.vel.z = 0; }
+  }
+  P.pos.x = nx; P.pos.z = nz;
+  const h = heightAt(nx, nz);
+  if (P.walkGround){
+    if (h < P.pos.y - 0.35){ P.walkGround = false; P.vel.y = 0; }   // stepped off an edge
+    else { P.pos.y = h; P.vel.y = 0; }
+  }
+  if (!P.walkGround){
+    P.vel.y -= G * dt; P.pos.y += P.vel.y * dt;
+    if (P.pos.y <= h){ P.pos.y = h; P.vel.y = 0; P.walkGround = true; SFX.step(0.3); }
+  }
+  P.N.set(0, 1, 0);
+  P.walkSp = Math.hypot(P.vel.x, P.vel.z);
+  if (P.walkGround && P.walkSp > 0.3){   // footsteps
+    P.stepD += P.walkSp * dt;
+    const L = P.walkSp > 3 ? 1.3 : 0.75;
+    if (P.stepD > L){ P.stepD -= L; SFX.step(P.walkSp > 3 ? 0.14 : 0.08); }
+  }
+}
+// B / L3: step off the board and walk, or drop it and hop back on
+function toggleBoard(){
+  if (!started) return;
+  const hs = Math.hypot(P.vel.x, P.vel.z);
+  if (P.state === 'walk'){
+    if (!P.walkGround) return;
+    P.onFoot = false; P.state = 'ride'; P.fakie = false; P.sN.set(0, 1, 0);
+    P.vel.set(Math.sin(P.yaw) * hs, 0, Math.cos(P.yaw) * hs);   // roll off at walking pace, the way you face
+    SFX.land(0.2); popup('ボードに乗った', 'good');
+  } else if (P.state === 'ride'){
+    if (P.manual) endManual(true);
+    if (hs > 0.8) P.yaw = Math.atan2(P.vel.x, P.vel.z);   // face where you were rolling (even from fakie)
+    P.onFoot = true; P.state = 'walk'; P.walkGround = true; P.charging = false; P.slideT = 0; P.stepD = 0;
+    P.vel.y = 0; if (hs > RUN_SP) P.vel.multiplyScalar(RUN_SP / hs);
+    SFX.step(0.3); popup('ボードを降りた', '', pad.connected ? '左スティックで歩く ・ R2 で走る ・ L3 でまた乗る' : 'W で歩く ・ Shift で走る ・ B でまた乗る');
+  }
+}
+
 function step(dt){
   if (P.landSquash > 0) P.landSquash = Math.max(0, P.landSquash - dt * 1.8);
   if (P.state === 'ride') rideStep(dt);
   else if (P.state === 'air') airStep(dt);
   else if (P.state === 'grind') grindStep(dt);
+  else if (P.state === 'walk') walkStep(dt);
   else bailStep(dt);
 }
 
@@ -2182,12 +2298,13 @@ function pose(S, Q, dt){
   const {root, boardPivot, riderG, rig, torsoG, headG, anim} = S;
   // root orientation
   const targetN = (Q.state === 'ride' || Q.state === 'bail') ? Q.N : Y;
-  const rate = Q.state === 'ride' ? 18 : (Q.state === 'grind' ? 20 : 3.5);
+  const rate = Q.state === 'ride' || Q.state === 'walk' ? 18 : (Q.state === 'grind' ? 20 : 3.5);
   Q.sN.lerp(targetN, Math.min(1, rate * dt)).normalize();
   qTilt.setFromUnitVectors(Y, Q.sN);
   qYaw.setFromAxisAngle(Y, Q.yaw);
   root.quaternion.copy(qTilt).multiply(qYaw);
   root.position.copy(Q.pos);
+  if (Q.state === 'walk'){ poseWalk(S, Q, dt); return; }
 
   // trick rotation
   let p = 0, flipLift = 0, rx = 0, ry = 0, rz = 0;
@@ -2318,7 +2435,7 @@ const ROOM_PREFIX = 'sunset-skatepark-v1-';
 const SHIRTS = [0xeaa3d3, 0x56b4e9, 0xffb12e, 0x6fd08c, 0xc49bff, 0xff7a5c];
 const HAIRS = [0x121318, 0x3b2416, 0x6b4a2b, 0x121318];
 const NET = {peer:null, role:'off', code:'', conns:new Map(), hostConn:null, myId:'', name:'', color:SHIRTS[0], remotes:new Map(), timer:0};
-const STATES = new Set(['ride', 'air', 'grind', 'bail']);
+const STATES = new Set(['ride', 'air', 'grind', 'bail', 'walk']);
 for (const k in TRICKS) TRICKS[k].code = k;
 const netOk = () => typeof window.Peer === 'function';
 function netStatus(msg, bad){ const el = $($('menuJoin').hidden ? 'netMsg' : 'joinMsg'); el.textContent = msg; el.classList.toggle('bad', !!bad); }
@@ -2599,6 +2716,7 @@ function updateRemotes(dt){
     if (Q.trick) Q.trickP = Math.min(1, Q.trickP + dt / Q.trick.dur);
     if (Q.pushing) Q.pushPhase = (Q.pushPhase + dt / 0.72) % 1;
     if (Q.state === 'bail') Q.bailT += dt;
+    Q.walkSp = Math.hypot(R.vel.x, R.vel.z);   // drives their walking stride
     const here = R.map === CUR.id;   // someone skating the other map isn't drawn in this one
     R.S.root.visible = R.tag.sp.visible = R.call.sp.visible = here;
     if (!here) continue;
@@ -2738,11 +2856,13 @@ function updateCamera(dt){
     return;
   }
   const hs = Math.hypot(P.vel.x, P.vel.z);
-  if ((P.state === 'ride' && hs > 1.5) || P.state === 'grind'){
+  const foot = P.state === 'walk';
+  if (foot) camState.yaw += wrap(P.yaw - camState.yaw) * Math.min(1, 4 * dt);   // on foot: stay behind your back, even walking backwards
+  else if ((P.state === 'ride' && hs > 1.5) || P.state === 'grind'){
     const va = Math.atan2(P.vel.x, P.vel.z);
     camState.yaw += wrap(va - camState.yaw) * Math.min(1, 3.2 * dt);
   }
-  const dist = 5.6, height = 2.5;
+  const dist = foot ? 4.4 : 5.6, height = foot ? 2.1 : 2.5;
   const want = new V3(P.pos.x - Math.sin(camState.yaw) * dist, P.pos.y + height, P.pos.z - Math.cos(camState.yaw) * dist);
   const B = CUR.bounds;
   want.x = clamp(want.x, B.x0 + 0.4, B.x1 - 0.4);
