@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="すおのトリプルヒールフリップstory は、ブラウザで遊べる無料の3Dスケボーゲーム。キックフリップやグラインド、マニュアルをつないでコンボを決めよう。京都・四条河原町の夜の町並み(先斗町・木屋町・鴨川・四条大橋)を滑れるマップも。部屋コードで友達と最大4人のオンラインにも対応。キーボードとPS5コントローラーで遊べます。">
+<meta name="description" content="すおのトリプルヒールフリップstory は、ブラウザで遊べる無料の3Dスケボーゲーム。キックフリップやグラインド、マニュアルをつないでコンボを決めよう。京都・四条河原町の夜の町並み(先斗町・木屋町・鴨川・四条大橋)や、超高層ビルが並ぶニューヨークふうの夜の街を滑れるマップも。部屋コードで友達と最大4人のオンラインにも対応。キーボードとPS5コントローラーで遊べます。">
 <link rel="canonical" href="https://kenshi20110702-code.github.io/suo-skate/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kenshi20110702-code.github.io/suo-skate/">
@@ -188,6 +188,8 @@ button:disabled{opacity:.45;cursor:default}
   <span class="k">L2 / ○</span><span>ブレーキ</span>
   <span class="k">✕</span><span>オーリー(長押しでタメると高く跳ぶ)</span>
   <span class="k">右スティックをはじく</span><span>地上でも空中でも一発でトリック:← キックフリップ ・ → ヒールフリップ ・ ↑ インポッシブル ・ ↓ ショービット ・ ↙ 360フリップ ・ ↘ バリアルヒール ・ ↗ か R3 で すおの十八番トリプルヒールフリップ</span>
+  <span class="k">L1 + 右スティック</span><span>→ インワードヒール ・ ↗ レーザーフリップ ・ ↑ ノーコンプライ ・ ↖ ホスピタルフリップ ・ ← ハードフリップ ・ ↙ ボンレス ・ ↓ 360ショービット ・ ↘ ナイトメアフリップ</span>
+  <span class="k">十字キー ↑ / ↓</span><span>ゆうとの十八番ナイトメアフリップ / けんしの十八番ヒッピージャンプ</span>
   <span class="k">□ 長押し</span><span>インディーグラブ</span>
   <span class="k">△ 長押し</span><span>マニュアル(左スティック↑↓でバランス)</span>
   <span class="k">L1 / R1</span><span>空中でスピン</span>
@@ -205,6 +207,9 @@ button:disabled{opacity:.45;cursor:default}
   <span class="k">J K L I U Y</span><span>ボタン1つでトリック(地上なら自動で跳ぶ)</span>
   <span class="k"></span><span>J キックフリップ ・ K ヒール ・ L ショービット ・ I 360フリップ ・ U インポッシブル ・ Y バリアルヒール</span>
   <span class="k">T</span><span>すおの十八番トリプルヒールフリップ(331,511点)</span>
+  <span class="k">F G E Q Z</span><span>F ハードフリップ ・ G インワードヒール ・ E 360ショービット ・ Q レーザーフリップ ・ Z ホスピタルフリップ</span>
+  <span class="k">X C</span><span>X ボンレス ・ C ノーコンプライ</span>
+  <span class="k">N ・ P</span><span>ゆうとの十八番ナイトメアフリップ ・ けんしの十八番ヒッピージャンプ</span>
   <span class="k">O 長押し</span><span>インディーグラブ</span>
   <span class="k">M 長押し</span><span>マニュアル(W S でバランス)</span>
   <span class="k">レール</span><span>近くに着地すれば自動でグラインド(A D でバランス)</span>
@@ -232,7 +237,7 @@ button:disabled{opacity:.45;cursor:default}
           <span class="mode-s">部屋コードで最大4人。ログイン不要</span>
         </button>
       </div>
-      <p class="keys"><kbd>W</kbd> プッシュ ・ <kbd>Space</kbd> オーリー ・ <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>I</kbd><kbd>U</kbd><kbd>Y</kbd> トリック ・ <kbd>T</kbd> すおの十八番 ・ <kbd>M</kbd> マニュアル ・ <kbd>B</kbd> 降りて歩く ・ PS5コントローラーはどれかのボタンでオフライン開始</p>
+      <p class="keys"><kbd>W</kbd> プッシュ ・ <kbd>Space</kbd> オーリー ・ <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>I</kbd><kbd>U</kbd><kbd>Y</kbd><kbd>F</kbd><kbd>G</kbd>… トリック ・ <kbd>T</kbd> すおの十八番 ・ <kbd>M</kbd> マニュアル ・ <kbd>B</kbd> 降りて歩く ・ PS5コントローラーはどれかのボタンでオフライン開始</p>
       <button id="charBtn" type="button" class="charpick">
         <span class="charpick-l">キャラクター選択</span>
         <span class="charpick-now">いま:<b id="charNow">すお</b></span>
@@ -769,6 +774,19 @@ const TRICKS = {
   KeyY:{name:'Varial Heelflip', dur:0.5, pts:180, z:-1, y:-0.5, ff:[-0.18, 0.1, 0.11], bf:[-0.15, 0.03, -0.08]},
   // suo's signature: three full heelflip rotations in one pop
   KeyT:{name:'すおの十八番トリプルヒールフリップ', dur:0.72, pts:331511, z:-3, ff:[-0.26, 0.13, 0.15], bf:[0, 0.08, 0]},
+  // half flip + end over end (x and z half turns together land the board back on its wheels)
+  KeyF:{name:'Hardflip', dur:0.5, pts:220, x:-0.5, z:0.5, ff:[0.12, 0.16, 0.06], bf:[-0.1, 0.02, -0.12]},
+  KeyG:{name:'Inward Heelflip', dur:0.5, pts:170, z:-1, y:0.5, ff:[-0.2, 0.1, 0.11], bf:[-0.2, 0.02, -0.1]},
+  KeyE:{name:'360 Pop Shove-it', dur:0.5, pts:150, y:1, ff:[0, 0.15, 0], bf:[-0.24, 0.02, -0.1]},
+  KeyQ:{name:'Laser Flip', dur:0.62, pts:280, z:-1, y:-1, ff:[-0.15, 0.12, 0.1], bf:[0.2, 0.0, -0.12]},
+  KeyZ:{name:'Hospital Flip', dur:0.56, pts:200, z:0.5, x:0.5, y:0.5, ff:[0.2, 0.12, 0.08], bf:[0, 0.06, 0]},
+  // foot plants: the front foot drops to the ground while the board comes up (tilt = nose up, back down again)
+  KeyX:{name:'Boneless', dur:0.5, pts:90, tilt:-0.45, ff:[0.3, -0.42, 0.12], bf:[0, 0.08, 0]},
+  KeyC:{name:'No Comply', dur:0.48, pts:90, tilt:-0.75, ff:[0.32, -0.42, 0.22], bf:[0, 0.04, -0.06]},
+  // yuto's signature: a varial double kickflip
+  KeyN:{name:'ゆうとの十八番ナイトメアフリップ', dur:0.66, pts:500, z:2, y:0.5, ff:[0.24, 0.13, 0.13], bf:[-0.18, 0.02, -0.1]},
+  // kenshi's signature: the board rolls on along the ground while he jumps over the top
+  KeyP:{name:'けんしの十八番ヒッピージャンプ', dur:0.7, pts:300, hippie:true, ff:[0, 0.2, 0], bf:[0, 0.2, 0]},
 };
 const ZERO3 = [0, 0, 0];
 const START = {x:0, z:26, yaw:Math.PI};
@@ -942,6 +960,8 @@ function padButtons(){
   if (pressed(9)) toggleHelp();
   if (pressed(10)) toggleBoard();   // L3 (click the left stick) = step off / back on the board
   if (pressed(11)) trickPress(TRICKS.KeyT);   // R3 (click the right stick) = triple heelflip
+  if (pressed(12)) trickPress(TRICKS.KeyN);   // D-pad ↑ = yuto's nightmare flip
+  if (pressed(13)) trickPress(TRICKS.KeyP);   // D-pad ↓ = kenshi's hippie jump
 }
 // Right stick: one flick = one trick, on the ground or in the air
 //   ← kickflip, → heelflip, ↗ triple heelflip, ↑ impossible, ↓ pop shove-it, ↙ 360 flip, ↘ varial heelflip
@@ -952,6 +972,14 @@ function padSticks(){
   if (mag < 0.8) return;
   const ang = Math.atan2(-ry, rx) * 180 / Math.PI;   // 0 = right, 90 = up
   let t;
+  // holding L1: a second set, one per 45° direction
+  //   → inward heel, ↗ laser, ↑ no comply, ↖ hospital, ← hardflip, ↙ boneless, ↓ 360 shove-it, ↘ nightmare
+  if (pad.btn[4]){
+    const sector = (Math.round(ang / 45) + 8) % 8;
+    trickPress(TRICKS[['KeyG', 'KeyQ', 'KeyC', 'KeyZ', 'KeyF', 'KeyX', 'KeyE', 'KeyN'][sector]]);
+    RS.needCenter = true;
+    return;
+  }
   if (ang > -30 && ang < 30) t = TRICKS.KeyK;
   else if (ang >= 30 && ang < 60) t = TRICKS.KeyT;   // ↗ = triple heelflip
   else if (ang >= 60 && ang <= 120) t = TRICKS.KeyU;
@@ -1148,30 +1176,7 @@ function updateCrowd(dt){
   }
 }
 
-/* ---------- map 2: Kyoto, Shijo-Kawaramachi at night ----------
-   x = east, z = south (north is -z). Street level is y 0; the Kamo riverbank sits lower, at RB.
-   West → east: Shinkyogoku arcade, Kawaramachi-dori (covered sidewalks), Kiyamachi + the Takase river,
-   Pontocho alley, the Kamo river (riverbank, water, Shijo Ohashi bridge), Kawabata-dori and the kabuki theatre.
-   Shijo-dori runs west → east across all of it. */
-const KYOTO = (() => {
-const X0 = -66, X1 = 58, Z0 = -44, Z1 = 30, RB = -2.6, WATER = RB - 0.5;
-const SN0 = -2.4, SN1 = 18.4;                 // Shijo-dori incl. sidewalks (on the bridge: deck + parapets)
-const inShijo = z => z > SN0 && z < SN1;
-const takaseBridge = z => (z > -17 && z < -15) || (z > -33 && z < -31);
-const K = newMap({
-  id:'kyoto', name:'京都・河原町(夜)', short:'河原町',
-  desc:'夜の四条河原町。アーケード、木屋町と高瀬川、先斗町、四条大橋から鴨川の河川敷まで、ひと続きで滑れる。',
-  base(x, z){
-    if (x < X0 || x > X1 || z < Z0 || z > Z1) return BLOCKED;
-    if (x >= 12 && x < 34 && !inShijo(z)) return x >= 24 ? BLOCKED : RB;      // riverbank, then the river
-    if (x >= -14 && x < -11.5 && !inShijo(z) && !takaseBridge(z)) return BLOCKED;   // Takase river
-    return 0;
-  },
-  bounds:{x0:X0, x1:X1, z0:Z0, z1:Z1},
-  start:{x:-24, z:8, yaw:Math.PI / 2}, view:{x:-4, z:-8, r:60, h:32}, tightCam:true,
-});
-K.group.visible = false;
-
+/* ---------- shared kit for the city maps (boxes, ledges, instancing, lit facades) ---------- */
 /* --- little helpers --- */
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -1220,14 +1225,59 @@ function ledge(x0, x1, z0, z1, y0, top, m){
 function inst(geo, m, list, set){
   if (!list.length) return null;
   const im = new THREE.InstancedMesh(geo, m, list.length), o = new THREE.Object3D(), col = new THREE.Color();
+  const tinted = list.some(it => it.c !== undefined);   // once any copy has its own colour, the rest default to white (not black)
   list.forEach((it, i) => {
     o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
     set(o, it); o.updateMatrix(); im.setMatrixAt(i, o.matrix);
-    if (it.c !== undefined){ col.set(it.c); im.setColorAt(i, col); }
+    if (tinted){ col.set(it.c === undefined ? 0xffffff : it.c); im.setColorAt(i, col); }
   });
   im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
   put(im); return im;
 }
+
+// building faces: wall colour + window grid; `emi` has only the lit windows so they glow at night
+function facade(wall, cols, floors, litP){
+  const W = 256, H = 384;
+  const maps = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
+  const g = maps[0].getContext('2d'), e = maps[1].getContext('2d');
+  g.fillStyle = wall; g.fillRect(0, 0, W, H); e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
+  const cw = W / cols, fh = H / floors;
+  for (let f = 0; f < floors; f++) for (let c = 0; c < cols; c++){
+    const x = c * cw + cw * 0.14, y = f * fh + fh * 0.22, ww = cw * 0.72, hh = fh * 0.5;
+    const lit = Math.random() < litP, warm = Math.random() < 0.7;
+    g.fillStyle = '#141824'; g.fillRect(x, y, ww, hh);
+    if (lit){
+      const col = warm ? `hsl(${rnd(28, 44)},${rnd(60, 90)}%,${rnd(58, 72)}%)` : `hsl(${rnd(190, 215)},${rnd(30, 60)}%,${rnd(70, 85)}%)`;
+      e.fillStyle = col; e.fillRect(x, y, ww, hh);
+      e.fillStyle = 'rgba(0,0,0,.35)'; e.fillRect(x + ww * rnd(0.1, 0.6), y, ww * 0.12, hh);   // a curtain
+    }
+  }
+  return maps.map(c => { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; });
+}
+
+/* ---------- map 2: Kyoto, Shijo-Kawaramachi at night ----------
+   x = east, z = south (north is -z). Street level is y 0; the Kamo riverbank sits lower, at RB.
+   West → east: Shinkyogoku arcade, Kawaramachi-dori (covered sidewalks), Kiyamachi + the Takase river,
+   Pontocho alley, the Kamo river (riverbank, water, Shijo Ohashi bridge), Kawabata-dori and the kabuki theatre.
+   Shijo-dori runs west → east across all of it. */
+const KYOTO = (() => {
+const X0 = -66, X1 = 58, Z0 = -44, Z1 = 30, RB = -2.6, WATER = RB - 0.5;
+const SN0 = -2.4, SN1 = 18.4;                 // Shijo-dori incl. sidewalks (on the bridge: deck + parapets)
+const inShijo = z => z > SN0 && z < SN1;
+const takaseBridge = z => (z > -17 && z < -15) || (z > -33 && z < -31);
+const K = newMap({
+  id:'kyoto', name:'京都・河原町(夜)', short:'河原町',
+  desc:'夜の四条河原町。アーケード、木屋町と高瀬川、先斗町、四条大橋から鴨川の河川敷まで、ひと続きで滑れる。',
+  base(x, z){
+    if (x < X0 || x > X1 || z < Z0 || z > Z1) return BLOCKED;
+    if (x >= 12 && x < 34 && !inShijo(z)) return x >= 24 ? BLOCKED : RB;      // riverbank, then the river
+    if (x >= -14 && x < -11.5 && !inShijo(z) && !takaseBridge(z)) return BLOCKED;   // Takase river
+    return 0;
+  },
+  bounds:{x0:X0, x1:X1, z0:Z0, z1:Z1},
+  start:{x:-24, z:8, yaw:Math.PI / 2}, view:{x:-4, z:-8, r:60, h:32}, tightCam:true,
+});
+K.group.visible = false;
 
 /* --- textures --- */
 const asphalt = noiseTex('#2a2a31', '210,210,230', false);
@@ -1281,25 +1331,6 @@ const willowT = canvasTex(128, 256, (g, w, h) => {
     g.beginPath(); g.moveTo(x, 0); g.quadraticCurveTo(x + rnd(-8, 8), len / 2, x + rnd(-6, 6), len); g.stroke();
   }
 });
-// building faces: wall colour + window grid; `emi` has only the lit windows so they glow at night
-function facade(wall, cols, floors, litP){
-  const W = 256, H = 384;
-  const maps = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
-  const g = maps[0].getContext('2d'), e = maps[1].getContext('2d');
-  g.fillStyle = wall; g.fillRect(0, 0, W, H); e.fillStyle = '#000'; e.fillRect(0, 0, W, H);
-  const cw = W / cols, fh = H / floors;
-  for (let f = 0; f < floors; f++) for (let c = 0; c < cols; c++){
-    const x = c * cw + cw * 0.14, y = f * fh + fh * 0.22, ww = cw * 0.72, hh = fh * 0.5;
-    const lit = Math.random() < litP, warm = Math.random() < 0.7;
-    g.fillStyle = '#141824'; g.fillRect(x, y, ww, hh);
-    if (lit){
-      const col = warm ? `hsl(${rnd(28, 44)},${rnd(60, 90)}%,${rnd(58, 72)}%)` : `hsl(${rnd(190, 215)},${rnd(30, 60)}%,${rnd(70, 85)}%)`;
-      e.fillStyle = col; e.fillRect(x, y, ww, hh);
-      e.fillStyle = 'rgba(0,0,0,.35)'; e.fillRect(x + ww * rnd(0.1, 0.6), y, ww * 0.12, hh);   // a curtain
-    }
-  }
-  return maps.map(c => { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; });
-}
 const FACADES = [['#5d5a57', 4, 4, 0.4], ['#3f444c', 3, 4, 0.5], ['#6b6157', 4, 4, 0.35], ['#2f3238', 5, 5, 0.55], ['#7a746c', 4, 4, 0.3], ['#4a3f3a', 3, 4, 0.45]]
   .map(([c, a, b, p]) => { const [map, emi] = facade(c, a, b, p); return lam(0xffffff, {map, emissiveMap:emi, emissive:0xffffff}); });
 // a wooden townhouse front (machiya): lattice on the ground floor with warm light behind, small upstairs slots
@@ -1796,6 +1827,636 @@ K.update = dt => {
 };
 useMap(PARK);
 return K;
+})();
+
+/* ---------- map 3: a Manhattan-style midtown grid at night ----------
+   x = east, z = south. Two avenues run north–south (x -43..-29 and 17..31), two streets cross them
+   (z -45..-35 and 15..25); everything off the roads is 15 cm sidewalk. The middle block is an open plaza
+   (red glowing stairs, a fountain, barriers, a spinning cube); south of it a raised park up a six-stair;
+   east of it a tower with a granite plaza up a seven-stair with hubbas. Skyscrapers, billboards, taxis,
+   steaming manholes and a news ticker all around. */
+const NYC = (() => {
+const X0 = -60, X1 = 60, Z0 = -70, Z1 = 50, CURB = 0.15;
+const AVE = [[-43, -29], [17, 31]], STR = [[-45, -35], [15, 25]];
+const FOUNT = [3.5, 10.5, 0.5, 7.5];   // the fountain's water, inside its rim (you can't ride there)
+const N = newMap({
+  id:'nyc', name:'ニューヨーク・ミッドタウン(夜)', short:'NY',
+  desc:'超高層ビルが立ち並ぶ夜のニューヨークふうの街。ネオンの広場に赤く光る大階段、ハバ付きの7段ステア、公園の6段ステア、タクシーや湯気の出るマンホールも。',
+  base(x, z){
+    if (x < X0 || x > X1 || z < Z0 || z > Z1) return BLOCKED;
+    if (x > FOUNT[0] && x < FOUNT[1] && z > FOUNT[2] && z < FOUNT[3]) return BLOCKED;
+    return 0;
+  },
+  bounds:{x0:X0, x1:X1, z0:Z0, z1:Z1},
+  start:{x:-6, z:9, yaw:Math.PI}, view:{x:-6, z:-10, r:62, h:165}, tightCam:true,
+});
+N.group.visible = false;
+const nearSt = z => STR.some(([a, b]) => z > a - 4.5 && z < b + 4.5);
+const nearAv = x => AVE.some(([a, b]) => x > a - 4.5 && x < b + 4.5);
+const SANS = '"Arial Black","Helvetica Neue",Arial,sans-serif';
+
+/* --- textures --- */
+const asphalt = noiseTex('#232329', '200,200,220', false);
+const sideT = rtex(256, 256, (g, w, h) => {   // big sidewalk flags, a few old gum spots
+  g.fillStyle = '#2e2e33'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++){ const v = 88 + Math.random() * 22 | 0; g.fillStyle = `rgb(${v},${v},${v + 5})`; g.fillRect(i * 128 + 2, j * 128 + 2, 124, 124); }
+  for (let k = 0; k < 2500; k++){ g.fillStyle = `rgba(0,0,0,${Math.random() * 0.14})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  for (let k = 0; k < 12; k++){ g.fillStyle = 'rgba(25,25,30,.4)'; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, rnd(2, 4), 0, TAU); g.fill(); }
+});
+const graniteT = noiseTex('#68625c', '25,20,18', false);
+const poolT = canvasTex(128, 128, (g, w) => {
+  const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,.35)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, w, w);
+});
+const steamT = canvasTex(64, 64, (g, w) => {
+  const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  r.addColorStop(0, 'rgba(255,255,255,.9)'); r.addColorStop(0.5, 'rgba(255,255,255,.35)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, w, w);
+});
+const stripeT = rtex(128, 32, (g, w, h) => {
+  g.fillStyle = '#f2ece0'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff6a10';
+  for (let x = -h; x < w + h; x += 32){ g.beginPath(); g.moveTo(x, h); g.lineTo(x + 16, h); g.lineTo(x + 16 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+});
+const bandT = rtex(32, 64, (g, w, h) => { g.fillStyle = '#ff6a10'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2ece0'; g.fillRect(0, 0, w, h / 2); });
+const railT = rtex(64, 64, (g, w, h) => {
+  g.clearRect(0, 0, w, h); g.fillStyle = '#fff';
+  g.fillRect(0, 0, w, 6); g.fillRect(0, h - 6, w, 6);
+  for (let x = 4; x < w; x += 10) g.fillRect(x, 0, 3, h);
+});
+const holeT = canvasTex(64, 128, (g, w, h) => {   // subway stairs going down into the dark
+  g.fillStyle = '#050507'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 9; i++){ const v = 70 - i * 7; g.fillStyle = `rgb(${v},${v},${v + 6})`; g.fillRect(0, i * 12, w, 4); }
+});
+const fwaterT = rtex(128, 128, (g, w, h) => {
+  g.fillStyle = '#0b2a4a'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 140; i++){ g.fillStyle = `rgba(${150 + Math.random() * 100 | 0},220,255,${rnd(0.1, 0.45)})`; g.fillRect(Math.random() * w, Math.random() * h, rnd(6, 22), rnd(1, 3)); }
+});
+function towerMat(wall, cols, floors, lit){ const [map, emi] = facade(wall, cols, floors, lit); return lam(0xffffff, {map, emissiveMap:emi, emissive:0xffffff}); }
+const TOWERS = [['#1b2130', 6, 8, 0.5], ['#2b2a30', 5, 8, 0.42], ['#3b362f', 4, 6, 0.45], ['#152029', 8, 8, 0.6], ['#4b4741', 4, 6, 0.35], ['#1f2840', 6, 8, 0.55], ['#30302e', 5, 6, 0.4]]
+  .map(a => towerMat(...a));
+const FAR = towerMat('#141925', 10, 26, 0.45);
+const SHOPS = ['DELI', 'PIZZA', 'BAGELS', 'PHARMACY', 'CAFE', 'SHOES', 'BAR', 'DINER', 'SUSHI', 'BOOKS', 'GYM', 'DONUTS', 'RAMEN', 'TACOS', 'SKATE SHOP', 'JAZZ', 'FLOWERS', 'NOODLES', 'BURGERS', 'THEATER', '24 HRS', 'LAUNDRY'];
+// street-level shop windows under a coloured awning (8 m wide, 4 m tall, two shops)
+const SHOPFRONTS = [0, 1, 2, 3, 4, 5, 6, 7].map(() => rtex(512, 256, (g, w, h) => {
+  g.fillStyle = '#0c0c10'; g.fillRect(0, 0, w, h);
+  for (const x0 of [0, w / 2]){
+    const hue = rnd(0, 360);
+    g.fillStyle = `hsl(${hue},70%,${rnd(30, 45)}%)`; g.fillRect(x0 + 6, 40, w / 2 - 12, 46);
+    g.fillStyle = '#fff'; g.font = `900 30px ${SANS}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pick(SHOPS), x0 + w / 4, 64, w / 2 - 30);
+    const gr = g.createLinearGradient(0, 92, 0, h); const warm = Math.random() < 0.7;
+    gr.addColorStop(0, warm ? '#ffe6b0' : '#dff0ff'); gr.addColorStop(1, warm ? '#c88a40' : '#7fa8d0');
+    g.fillStyle = gr; g.fillRect(x0 + 12, 96, w / 2 - 24, h - 100);
+    g.fillStyle = 'rgba(30,20,16,.5)';
+    for (let k = 0; k < 6; k++) g.fillRect(x0 + 18 + Math.random() * (w / 2 - 60), 130 + Math.random() * 60, rnd(10, 30), rnd(20, 60));
+    g.fillStyle = '#0c0c10'; g.fillRect(x0 + w / 4 - 2, 96, 4, h - 100);
+    if (Math.random() < 0.6){ g.fillStyle = `hsl(${rnd(0, 360)},100%,62%)`; g.font = `700 22px ${SANS}`; g.fillText('OPEN', x0 + w / 4 + 50, 120); }
+  }
+}));
+// billboards: a gradient, a few lines of big type and a light frame
+function adTex(W, H, bg, lines){
+  return canvasTex(W, H, (g) => {
+    const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, bg[0]); gr.addColorStop(1, bg[1]);
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (const [t, size, col, y, font] of lines){ g.fillStyle = col; g.font = `900 ${size * H | 0}px ${font || SANS}`; g.fillText(t, W / 2, y * H, W * 0.9); }
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 6; g.strokeRect(3, 3, W - 6, H - 6);
+  });
+}
+const AD = {
+  cola:adTex(512, 384, ['#ff1744', '#8a0020'], [['SUO COLA', 0.3, '#fff', 0.42], ['十八番の味。', 0.13, '#ffe0e6', 0.74, GOTH]]),
+  game:adTex(768, 384, ['#2a0a5e', '#08204a'], [['すおの', 0.13, '#ffd27a', 0.2, GOTH], ['トリプルヒールフリップ', 0.17, '#fff', 0.46, GOTH], ['story', 0.2, '#56e0cf', 0.76]]),
+  pts:adTex(512, 384, ['#04101c', '#0b2c48'], [['331,511', 0.3, '#00f0ff', 0.44], ['POINTS', 0.13, '#fff', 0.76]]),
+  sneak:adTex(512, 256, ['#ffe14d', '#ff9f00'], [['KICKFLIP', 0.32, '#111', 0.42], ['SNEAKERS', 0.15, '#111', 0.78]]),
+  show:adTex(384, 512, ['#3a0030', '#10001a'], [['MIDNIGHT', 0.12, '#ffd27a', 0.3], ['THE MUSICAL', 0.075, '#fff', 0.5], ['NOW PLAYING', 0.055, '#ff9ad5', 0.82]]),
+  ramen:adTex(512, 320, ['#ff6a00', '#b02000'], [['ラーメン', 0.3, '#fff', 0.42, GOTH], ['NOODLE BAR · 24H', 0.1, '#ffe0b0', 0.8]]),
+  grind:adTex(512, 384, ['#7dff7a', '#16a34a'], [['GRIND', 0.3, '#0d1a0d', 0.4], ['THE CITY', 0.14, '#0d1a0d', 0.72]]),
+  watch:adTex(512, 384, ['#0e1530', '#2a3a70'], [['GRIND TIME', 0.17, '#fff', 0.42], ['since 2026', 0.09, '#cfd8ff', 0.72]]),
+  hotel:adTex(128, 512, ['#16041c', '#16041c'], [['H', 0.15, '#ff4fa0', 0.14], ['O', 0.15, '#ff4fa0', 0.32], ['T', 0.15, '#ff4fa0', 0.5], ['E', 0.15, '#ff4fa0', 0.68], ['L', 0.15, '#ff4fa0', 0.86]]),
+  tickets:adTex(512, 128, ['#140308', '#140308'], [['TICKETS · TONIGHT', 0.42, '#ff3048', 0.52]]),
+  subway:adTex(256, 64, ['#111', '#111'], [['SUBWAY', 0.55, '#fff', 0.54]]),
+  hotdog:adTex(256, 64, ['#ffd400', '#ffd400'], [['HOT DOGS', 0.52, '#c8102e', 0.54]]),
+  taxi:adTex(128, 48, ['#fff3c0', '#ffe080'], [['TAXI', 0.62, '#222', 0.55]]),
+};
+const tickerT = rtex(2048, 64, (g, w, h) => {
+  g.fillStyle = '#050304'; g.fillRect(0, 0, w, h);
+  g.font = `700 40px ${GOTH}`; g.textBaseline = 'middle'; g.fillStyle = '#ffb12e';
+  const msg = '★ BREAKING ★ すお、ミッドタウンでトリプルヒールフリップを決める  ★ 331,511 POINTS  ★ 今夜のNY:晴れ 18℃  ★ ケンシ・ゆうと・たつきも滑走中  ';
+  let x = 0; while (x < w){ g.fillText(msg, x, h / 2 + 2); x += g.measureText(msg).width; }
+});
+const lobbyT = canvasTex(512, 128, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fff2d8'); gr.addColorStop(1, '#d8a060');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#2a2018'; for (let x = 0; x < w; x += 32) g.fillRect(x, 0, 4, h);
+  g.fillRect(0, 0, w, 6);
+});
+
+/* --- materials --- */
+const M = {
+  asphalt:lam(0xffffff, {map:asphalt}), side:lam(0xffffff, {map:sideT}), granite:lam(0xffffff, {map:graniteT}),
+  conc:lam(0xa8a49c), stair:lam(0x86827c), roof:lam(0x15151a), post:lam(0x1e2026), steel:lam(0xaeb4bc),
+  paint:lam(0xd8d8d0, {polygonOffset:true, polygonOffsetFactor:-2}), yellow:lam(0xe8b400, {polygonOffset:true, polygonOffsetFactor:-2}),
+  redStep:lam(0xd81e32, {emissive:0x5a000c}), redGlow:glow(0xff8a98), glassWall:glow(0x9ac0ff, {transparent:true, opacity:0.16, side:THREE.DoubleSide, depthWrite:false}),
+  taxi:lam(0xffc21a), black:lam(0x111216), silver:lam(0x8a9098), glass:lam(0x141a24), lampHead:glow(0xffe6c0), green:glow(0x3dffb0),
+  head:glow(0xfff6e0), tail:glow(0xff2a1a), tire:lam(0x101012),
+  pool:glow(0xffffff, {map:poolT, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4}),
+  grass:lam(0xffffff, {map:noiseTex('#1b281a', '90,140,70', false)}), soil:lam(0x241c16), trunk:lam(0x2a1d16), leaf:lam(0xffffff, {emissive:0x07100a}),
+  crown:lam(0x8a8e96, {emissive:0x1a1c22}), crownGlow:glow(0xfff0c8),
+  tank:lam(0x5a3a26), walk:glow(0xff8a1a), water:glow(0xffffff, {map:fwaterT}), jet:glow(0xdff4ff, {transparent:true, opacity:0.55, depthWrite:false}),
+  cube:lam(0x1a1a20, {emissive:0x0a0a10}), barrier:lam(0xffffff, {map:stripeT, emissive:0x2a1a10}), band:lam(0xffffff, {map:bandT}),
+  shedTop:lam(0x26302a), shed:lam(0x2e4a34), signal:lam(0x1a1a1e), railing:lam(0x2c5a3a, {map:railT, alphaTest:0.5, side:THREE.DoubleSide}),
+  hole:glow(0xffffff, {map:holeT}), red:lam(0xc8102e, {emissive:0x40000a}), blue:lam(0x1f4fa8), cool:glow(0xe6f2ff),
+};
+asphalt.repeat.set(1, 1);
+
+// collected as we go, drawn once at the end
+const LAMPS = [], POOLS = [], BLINK = [], TRUNKS = [], LEAVES = [], VENTS = [], CYCLE = [];
+function lamp(x, z, y, h){ y = y === undefined ? CURB : y; LAMPS.push({x, y, z, h:h || 7}); POOLS.push({x, y, z, r:h && h < 6 ? 7 : 10, c:0xffd9a0}); }
+function tree(x, z, y){
+  y = y === undefined ? CURB : y;
+  TRUNKS.push({x, y, z}); solid(x - 0.2, x + 0.2, z - 0.2, z + 0.2, y + 2.6);
+  flat(x - 0.6, x + 0.6, z - 0.6, z + 0.6, y + 0.006, M.soil);
+  for (let k = 0; k < 4; k++) LEAVES.push({x:x + rnd(-0.9, 0.9), y:y + rnd(3, 4.3), z:z + rnd(-0.9, 0.9), r:rnd(1, 1.4), c:pick([0x2f5a2a, 0x3a6a30, 0x28502a])});
+}
+
+/* --- sky: a city night, glowing low on the horizon, a few stars and a moon --- */
+const sky = canvasTex(4, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#03040c'); gr.addColorStop(0.38, '#0b1030'); gr.addColorStop(0.6, '#1d1a40');
+  gr.addColorStop(0.8, '#45294a'); gr.addColorStop(1, '#7a4248');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+{
+  const pts = [];
+  for (let i = 0; i < 260; i++){ const th = Math.random() * TAU, y = rnd(0.35, 1), r = Math.sqrt(1 - y * y); pts.push(Math.cos(th) * r * 330, y * 330, Math.sin(th) * r * 330); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  put(new THREE.Points(sg, new THREE.PointsMaterial({color:0xcfd8ff, size:1.4, sizeAttenuation:false, fog:false})));
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({map:canvasTex(128, 128, (g, w) => {
+    const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    r.addColorStop(0, 'rgba(255,250,232,1)'); r.addColorStop(0.28, 'rgba(255,246,220,1)'); r.addColorStop(0.32, 'rgba(255,236,200,.3)'); r.addColorStop(1, 'rgba(255,230,190,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, w);
+  }), fog:false, depthWrite:false}));
+  moon.position.set(120, 230, -220); moon.scale.set(55, 55, 1); put(moon);
+}
+
+/* --- ground: one big road, then every block raised as 15 cm sidewalk --- */
+flat(-320, 320, -320, 320, 0, M.asphalt, 1 / 6);
+const XS = [[-160, -43], [-29, 17], [31, 160]], ZS = [[-180, -45], [-35, 15], [25, 160]];
+for (const [x0, x1] of XS) for (const [z0, z1] of ZS) box(x0, x1, -0.3, CURB, z0, z1, M.side, {solid:true, su:1 / 4});
+
+/* --- road paint: lane dashes on the avenues, double yellow on the streets, crosswalks --- */
+const PAINT = [], YEL = [];
+const dash = (L, x0, x1, z0, z1) => L.push({x:(x0 + x1) / 2, z:(z0 + z1) / 2, w:x1 - x0, d:z1 - z0});
+for (const [a, b] of AVE){
+  for (let z = -200; z < 200; z += 6) if (!nearSt(z) && !nearSt(z + 3)) for (let k = 1; k < 4; k++) dash(PAINT, a + 3.5 * k - 0.07, a + 3.5 * k + 0.07, z, z + 3);
+  for (const [s0, s1] of STR){
+    for (let x = a + 0.4; x < b - 0.4; x += 0.9){ dash(PAINT, x, x + 0.45, s0 - 3.8, s0 - 0.8); dash(PAINT, x, x + 0.45, s1 + 0.8, s1 + 3.8); }
+    for (let z = s0 + 0.4; z < s1 - 0.4; z += 0.9){ dash(PAINT, a - 3.8, a - 0.8, z, z + 0.45); dash(PAINT, b + 0.8, b + 3.8, z, z + 0.45); }
+    dash(PAINT, a, b, s0 - 4.4, s0 - 4.1); dash(PAINT, a, b, s1 + 4.1, s1 + 4.4);
+  }
+}
+for (const [s0, s1] of STR){
+  const m = (s0 + s1) / 2;
+  for (const [x0, x1] of [[-200, AVE[0][0] - 4.5], [AVE[0][1] + 4.5, AVE[1][0] - 4.5], [AVE[1][1] + 4.5, 200]]){
+    dash(YEL, x0, x1, m - 0.28, m - 0.12); dash(YEL, x0, x1, m + 0.12, m + 0.28);
+  }
+}
+const plane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+inst(plane, M.paint, PAINT, (o, p) => { o.position.set(p.x, 0.012, p.z); o.scale.set(p.w, 1, p.d); });
+inst(plane, M.yellow, YEL, (o, p) => { o.position.set(p.x, 0.012, p.z); o.scale.set(p.w, 1, p.d); });
+
+/* --- skyscrapers --- */
+function tier(x0, x1, y0, y1, z0, z1, fm){ return box(x0, x1, y0, y1, z0, z1, [fm, fm, M.roof, M.roof, fm, fm], {su:1 / 8, sv:1 / 24, cast:y0 < 1}); }
+function waterTower(x, z, y){
+  for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]){ const l = cyl(0.08, 3, M.post); l.position.set(x + dx * 1.1, y + 1.5, z + dz * 1.1); put(l); }
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 3.4, 16), M.tank); t.position.set(x, y + 4.7, z); put(t);
+  const r = new THREE.Mesh(new THREE.ConeGeometry(1.85, 1.4, 16), M.roof); r.position.set(x, y + 7.1, z); put(r);
+}
+// street-level shops along the given faces (N / S / E / W)
+function shops(x0, x1, z0, z1, fronts){
+  for (const side of fronts){
+    const ns = side === 'N' || side === 'S', len = ns ? x1 - x0 : z1 - z0;
+    const t = pick(SHOPFRONTS).clone(); t.needsUpdate = true; t.repeat.set(len / 8, 1);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 4), glow(0xd8d0c4, {map:t}));
+    m.position.set(ns ? (x0 + x1) / 2 : side === 'W' ? x0 - 0.05 : x1 + 0.05, CURB + 2, ns ? (side === 'N' ? z0 - 0.05 : z1 + 0.05) : (z0 + z1) / 2);
+    m.rotation.y = {S:0, N:Math.PI, E:Math.PI / 2, W:-Math.PI / 2}[side]; put(m);
+  }
+}
+// a tower: set-back tiers, then a crown (spire / antenna / floodlit top), red beacons, maybe a water tank
+function tower(x0, x1, z0, z1, h, o){
+  o = o || {};
+  const fm = o.mat || pick(TOWERS), n = o.tiers || 1;
+  let y = 0, a0 = x0, a1 = x1, b0 = z0, b1 = z1;
+  for (let i = 0; i < n; i++){
+    const top = i === n - 1 ? h : y + (h - y) * rnd(0.42, 0.58);
+    tier(a0, a1, y, top, b0, b1, fm); y = top;
+    if (i < n - 1){ const ix = (a1 - a0) * rnd(0.09, 0.15), iz = (b1 - b0) * rnd(0.09, 0.15); a0 += ix; a1 -= ix; b0 += iz; b1 -= iz; }
+  }
+  if (!o.decor) solid(x0, x1, z0, z1, h);
+  if (o.fronts) shops(x0, x1, z0, z1, o.fronts);
+  const cx = (a0 + a1) / 2, cz = (b0 + b1) / 2;
+  if (o.crown === 'spire'){
+    let s = Math.min(a1 - a0, b1 - b0) * 0.8, yy = y;
+    for (let k = 0; k < 4; k++){
+      box(cx - s / 2, cx + s / 2, yy, yy + 4, cz - s / 2, cz + s / 2, M.crown);
+      box(cx - s / 2 - 0.06, cx + s / 2 + 0.06, yy + 3.5, yy + 3.85, cz - s / 2 - 0.06, cz + s / 2 + 0.06, M.crownGlow);
+      yy += 4; s *= 0.7;
+    }
+    const nd = new THREE.Mesh(new THREE.ConeGeometry(Math.max(0.4, s * 0.3), 24, 8), M.steel); nd.position.set(cx, yy + 12, cz); put(nd);
+    BLINK.push({x:cx, y:yy + 24.3, z:cz});
+  } else if (o.crown === 'antenna'){
+    const an = cyl(0.3, 20, M.steel); an.position.set(cx, y + 10, cz); put(an);
+    BLINK.push({x:cx, y:y + 20.3, z:cz});
+  } else if (o.crown === 'lit'){
+    box(a0 - 0.08, a1 + 0.08, y - 8, y + 0.3, b0 - 0.08, b1 + 0.08, glow(o.litColor || 0x5ad0ff, {transparent:true, opacity:0.32, depthWrite:false, blending:THREE.AdditiveBlending}));
+  }
+  if (h > 45 && o.crown !== 'spire') for (const [x, z] of [[a0 + 0.8, b0 + 0.8], [a1 - 0.8, b1 - 0.8]]) BLINK.push({x, y:y + 0.5, z});
+  if (o.waterTower) waterTower(cx + rnd(-2, 2), cz + rnd(-2, 2), y);
+}
+// the playable blocks
+tower(-60, -47, -70, -49, 110, {tiers:3, fronts:'ES'});
+tower(-60, -47, -31, -12, 95, {tiers:2, crown:'antenna', fronts:'ENS'});
+tower(-60, -47, -12, 11, 58, {waterTower:true, fronts:'ES'});
+tower(-60, -47, 29, 50, 130, {tiers:3, crown:'spire', fronts:'EN'});
+tower(-25, -8, -70, -49, 140, {tiers:3, crown:'lit', litColor:0xff4fa0, fronts:'S'});
+tower(-8, 13, -70, -49, 85, {tiers:2, waterTower:true, fronts:'S'});
+tower(35, 60, -70, -49, 178, {tiers:4, crown:'spire', fronts:'WS'});
+tower(48, 60, -31, 11, 150, {tiers:3, crown:'lit', litColor:0x5ad0ff});
+tower(35, 48, 29, 50, 70, {waterTower:true, fronts:'WN'});
+tower(48, 60, 29, 50, 105, {tiers:2, crown:'antenna', fronts:'N'});
+// beyond the edges: more towers down every avenue and street (look only)
+{
+  const DX = [[-120, -47], [-25, 13], [35, 120]], DZ = [[-140, -49], [-31, 11], [29, 120]];
+  const cut = (a, b, lo, hi) => [[a, Math.min(b, lo)], [Math.max(a, lo), Math.min(b, hi)], [Math.max(a, hi), b]].filter(([p, q]) => q - p > 1);
+  for (const [ax, bx] of DX) for (const [az, bz] of DZ) for (const [x0, x1] of cut(ax, bx, X0, X1)) for (const [z0, z1] of cut(az, bz, Z0, Z1)){
+    if (x0 >= X0 && x1 <= X1 && z0 >= Z0 && z1 <= Z1) continue;   // inside the map: built above
+    const nx = Math.max(1, Math.round((x1 - x0) / 22)), nz = Math.max(1, Math.round((z1 - z0) / 22));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++){
+      const r = Math.random();
+      tower(x0 + (x1 - x0) * i / nx, x0 + (x1 - x0) * (i + 1) / nx - 0.4, z0 + (z1 - z0) * j / nz, z0 + (z1 - z0) * (j + 1) / nz - 0.4, rnd(28, 150),
+        {decor:true, tiers:r < 0.5 ? 2 : 1, crown:r < 0.12 ? 'antenna' : r > 0.94 ? 'spire' : null, waterTower:r > 0.5 && r < 0.68});
+    }
+  }
+  // the far skyline, fading into the haze
+  const far = [];
+  for (let i = 0; i < 150; i++){ const a = Math.random() * TAU, r = rnd(150, 240); far.push({x:Math.cos(a) * r, z:Math.sin(a) * r, w:rnd(12, 26), h:rnd(30, 190), d:rnd(12, 24)}); }
+  inst(new THREE.BoxGeometry(1, 1, 1), FAR, far, (o, b) => { o.position.set(b.x, b.h / 2, b.z); o.scale.set(b.w, b.h, b.d); o.rotation.y = Math.round(Math.random()) * 0.3; });
+  for (const b of far) if (b.h > 120) BLINK.push({x:b.x, y:b.h + 0.5, z:b.z});
+}
+
+/* --- billboards and the news ticker, mostly facing the plaza --- */
+function board(x, y, z, w, h, face, tex){
+  const dx = face === 'E' ? 1 : face === 'W' ? -1 : 0, dz = face === 'S' ? 1 : face === 'N' ? -1 : 0, ry = {S:0, N:Math.PI, E:Math.PI / 2, W:-Math.PI / 2}[face];
+  const f = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, h + 0.5, 0.5), M.post); f.position.set(x + dx * 0.05, y, z + dz * 0.05); f.rotation.y = ry; put(f);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glow(0xffffff, {map:tex})); m.position.set(x + dx * 0.32, y, z + dz * 0.32); m.rotation.y = ry; put(m);
+  return m;
+}
+board(-16.5, 24, -49, 15, 11.25, 'S', AD.cola);
+board(2.5, 16, -49, 18, 9, 'S', AD.game);
+board(-16.5, 11.5, -49, 12, 6, 'S', AD.sneak);
+board(-47, 22, -21, 9, 12, 'E', AD.show);
+CYCLE.push({m:board(-47, 13, 0, 12, 9, 'E', AD.pts).material, list:[AD.pts, AD.ramen, AD.watch], i:0});
+board(48, 30, -12, 12, 9, 'W', AD.grind);
+board(-53.5, 13, -49, 10, 6.25, 'S', AD.ramen);
+board(35, 20, -60, 12, 9, 'W', AD.watch);
+CYCLE.push({m:board(41.5, 14, 29, 11, 8.25, 'N', AD.grind).material, list:[AD.grind, AD.cola, AD.pts], i:1});
+board(-47, 15, 40, 2.4, 9.6, 'E', AD.hotel);
+board(-53.5, 18, 29, 9, 12, 'N', AD.show);
+{
+  tickerT.repeat.set(38 / 44, 1);
+  const t = new THREE.Mesh(new THREE.PlaneGeometry(38, 1.4), glow(0xffffff, {map:tickerT})); t.position.set(-6, 6.2, -48.6); put(t);
+  box(-25, 13, 5.35, 7.05, -49, -48.65, M.post);
+}
+
+/* --- the plaza (middle block): red glowing stairs, fountain, barriers, a spinning cube --- */
+// red stairs you can sit on: 14 glowing steps up to a 3 m deck, glass sides, three handrails
+{
+  const x0 = -10, x1 = -2, zb = -4, zt = -14, top = 3.0, n = 14;
+  const yAt = z => CURB + (top - CURB) * (zb - z) / (zb - zt);
+  addObs({x:(x0 + x1) / 2, z:(zb + zt) / 2, a:Math.PI / 2, hw:(x1 - x0) / 2, pts:[[-(zb - zt) / 2, CURB], [(zb - zt) / 2, top]]});
+  for (let i = 0; i < n; i++){
+    const za = zb - (zb - zt) * i / n, zc = zb - (zb - zt) * (i + 1) / n - 0.001, ty = CURB + (top - CURB) * (i + 0.5) / n;
+    box(x0, x1, 0, ty, zc, za, M.redStep, {cast:i % 4 === 0});
+    box(x0 + 0.02, x1 - 0.02, ty - 0.03, ty + 0.004, za - 0.06, za + 0.004, M.redGlow);
+  }
+  box(x0, x1, 0, top, zt - 1.5, zt, M.redStep, {solid:true, cast:true});
+  const tk = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 1.9), glow(0xffffff, {map:AD.tickets})); tk.position.set((x0 + x1) / 2, 1.6, zt - 1.53); tk.rotation.y = Math.PI; put(tk);
+  const sh = new THREE.Shape([new THREE.Vector2(zb, 0), new THREE.Vector2(zt - 1.5, 0), new THREE.Vector2(zt - 1.5, top + 0.95), new THREE.Vector2(zt, top + 0.95), new THREE.Vector2(zb, CURB + 0.95)]);
+  for (const x of [x0 - 0.03, x1 + 0.03]){ const gl = new THREE.Mesh(new THREE.ShapeGeometry(sh).rotateY(-Math.PI / 2), M.glassWall); gl.position.x = x; put(gl); }
+  for (const x of [x0 + 0.12, (x0 + x1) / 2, x1 - 0.12]){
+    addRail(x, yAt(zb - 0.3) + 0.9, zb - 0.3, x, top + 0.9, zt, true, M.steel);
+    if (x !== (x0 + x1) / 2) addRail(x, top + 0.9, zt, x, top + 0.9, zt - 1.4, true, M.steel);
+  }
+  for (let k = 0; k < 11; k++){   // people hanging out on the steps
+    const i = 1 + Math.floor(Math.random() * (n - 1));
+    addPerson(Math.random() < 0.5 ? rnd(-9.5, -6.5) : rnd(-5.5, -2.5), CURB + (top - CURB) * (i + 0.5) / n, zb - (zb - zt) * (i + 0.5) / n, N.group);
+  }
+  POOLS.push({x:-6, y:CURB, z:-1, r:9, c:0xff3048});
+}
+// the fountain: a granite rim you can grind all the way round
+{
+  const [a0, a1, b0, b1] = FOUNT, rim = 0.55, top = CURB + 0.55;
+  ledge(a0 - rim, a1 + rim, b0 - rim, b0, 0, top, M.granite); ledge(a0 - rim, a1 + rim, b1, b1 + rim, 0, top, M.granite);
+  ledge(a0 - rim, a0, b0, b1, 0, top, M.granite); ledge(a1, a1 + rim, b0, b1, 0, top, M.granite);
+  flat(a0, a1, b0, b1, CURB + 0.3, M.water, 1 / 3);
+  const cx = (a0 + a1) / 2, cz = (b0 + b1) / 2;
+  const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.32, 3.2, 12, 1, true), M.jet); jet.position.set(cx, CURB + 1.9, cz); put(jet);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.7, 14, 8, 0, TAU, 0, Math.PI / 2), M.jet); cap.position.set(cx, CURB + 3.3, cz); cap.scale.y = 0.5; put(cap);
+  N.jet = jet;
+  POOLS.push({x:cx, y:CURB, z:cz, r:10, c:0x5ad0ff});
+}
+// concrete barriers along the plaza edges (grind the tops)
+for (const [z0, z1] of [[-12, -9], [-7, -4], [3, 6]]) ledge(-28.6, -28.0, z0, z1, 0.1, CURB + 0.8, M.conc);
+for (const [z0, z1] of [[-26, -23], [-12, -9], [-6, -3], [6, 9]]) ledge(16.0, 16.6, z0, z1, 0.1, CURB + 0.8, M.conc);
+for (const [x0, x1] of [[-24, -21], [-16, -13], [2, 5], [10.5, 13.5]]) ledge(x0, x1, -34.6, -34.0, 0.1, CURB + 0.8, M.conc);
+// planters, benches, a manual pad, a bike rack
+function planter(x0, x1, z0, z1, y0, top){
+  y0 = y0 || 0; top = top || CURB + 0.55;
+  ledge(x0, x1, z0, z1, y0, top, M.granite);
+  const along = x1 - x0 >= z1 - z0, len = along ? x1 - x0 : z1 - z0;
+  for (let t = 0.8; t < len; t += 1.4) LEAVES.push({x:along ? x0 + t : (x0 + x1) / 2, y:top + 0.25, z:along ? (z0 + z1) / 2 : z0 + t, r:0.45, c:pick([0x2f6a2a, 0x3a7a30])});
+}
+planter(-24, -19, -30.4, -29); planter(8, 14, -30.4, -29); planter(-24, -19, 10, 11.4); planter(13.6, 15, -20, -15);
+for (const [x0, x1, z0, z1] of [[-1, 2.5, -24.3, -23.7], [-1, 2.5, -20.3, -19.7], [-20, -16.5, 2, 2.6], [-14, -10.5, 2, 2.6]]) ledge(x0, x1, z0, z1, 0, CURB + 0.45, M.granite);
+ledge(-22, -16, -12, -8, 0, CURB + 0.32, M.granite);   // manual pad
+addRail(-24, CURB + 0.75, -4, -24, CURB + 0.75, 3, true, M.steel);   // bike rack
+// a big black cube balanced on one corner, slowly turning
+{
+  const x = 10, z = -22;
+  box(x - 0.5, x + 0.5, 0, CURB + 0.35, z - 0.5, z + 0.5, M.granite, {solid:true});
+  const c = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.6, 2.6), M.cube); c.castShadow = true;
+  const spin = new THREE.Group(); spin.position.set(x, CURB + 0.35 + 2.6 * Math.sqrt(3) / 2, z); put(spin);
+  c.rotation.set(Math.atan(1 / Math.SQRT2), 0, Math.PI / 4); spin.add(c);
+  solid(x - 0.9, x + 0.9, z - 0.9, z + 0.9, CURB + 4.6);
+  N.cube = spin;
+}
+// a hot dog cart with its umbrella
+function cart(x, z){
+  box(x - 0.9, x + 0.9, CURB + 0.35, CURB + 1.15, z - 0.5, z + 0.5, M.steel, {cast:true});
+  for (const s of [-1, 1]){ const w = cyl(0.25, 0.08, M.tire); w.rotation.x = Math.PI / 2; w.position.set(x + s * 0.55, CURB + 0.25, z + 0.52); put(w); }
+  const p = cyl(0.03, 1.4, M.steel); p.position.set(x, CURB + 1.85, z); put(p);
+  const u = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.5, 12, 1, true), lam(0xffffff, {map:bandT, side:THREE.DoubleSide})); u.position.set(x, CURB + 2.6, z); put(u);
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.4), glow(0xffffff, {map:AD.hotdog})); s.position.set(x, CURB + 0.9, z + 0.51); put(s);
+  solid(x - 0.9, x + 0.9, z - 0.5, z + 0.5, CURB + 1.15);
+  POOLS.push({x, y:CURB, z, r:3.5, c:0xffe0a0});
+}
+cart(-16, 12.6); cart(8, 28.5); cart(-45, -24);
+// cafe tables (just for looks) with people around them
+for (const [x, z] of [[-20, -21], [-16.5, -24], [-2, -28], [4, -28.5], [-24, -14]]){
+  const t = cyl(0.45, 0.04, M.steel); t.position.set(x, CURB + 0.74, z); put(t);
+  const l = cyl(0.04, 0.72, M.steel); l.position.set(x, CURB + 0.37, z); put(l);
+  for (let k = 0; k < 2; k++){ const a = rnd(0, TAU); const ch = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.42), M.steel); ch.position.set(x + Math.cos(a) * 0.8, CURB + 0.45, z + Math.sin(a) * 0.8); put(ch); }
+  if (Math.random() < 0.7) addPerson(x + 0.9, CURB, z + 0.3, N.group);
+}
+
+/* --- the park south of the plaza: a raised terrace up a six-stair with handrails and hubbas --- */
+{
+  const T = CURB + 1.2;
+  box(-25, 13, 0, T, 36, 50, M.granite, {solid:true, su:1 / 3, cast:true});
+  flat(-23, 11, 38, 48.5, T + 0.006, M.grass, 1 / 3);
+  const x0 = -14, x1 = 2, zb = 32, zt = 36, n = 6;
+  const yAt = z => CURB + (T - CURB) * (z - zb) / (zt - zb);
+  addObs({x:(x0 + x1) / 2, z:(zb + zt) / 2, a:-Math.PI / 2, hw:(x1 - x0) / 2, pts:[[-(zt - zb) / 2, CURB], [(zt - zb) / 2, T]]});
+  for (let i = 0; i < n; i++){
+    const za = zb + (zt - zb) * i / n, zc = zb + (zt - zb) * (i + 1) / n + 0.001;
+    box(x0, x1, 0, CURB + (T - CURB) * (i + 0.5) / n, za, zc, M.stair, {cast:true});
+  }
+  for (const x of [x0 + 0.25, (x0 + x1) / 2, x1 - 0.25]) addRail(x, yAt(zb + 0.25) + 0.85, zb + 0.25, x, T + 0.85, zt - 0.05, true, M.steel);
+  for (const [h0, h1] of [[x0 - 1, x0], [x1, x1 + 1]]){   // hubbas, running on as ledges along the terrace
+    addObs({x:(h0 + h1) / 2, z:(zb + zt) / 2, a:-Math.PI / 2, hw:0.5, pts:[[-(zt - zb) / 2, CURB + 0.5], [(zt - zb) / 2, T + 0.5]], mat:M.granite});
+    for (const x of [h0 + 0.04, h1 - 0.04]) addRail(x, CURB + 0.5, zb + 0.05, x, T + 0.5, zt, false);
+    ledge(h0, h1, zt, zt + 3, T - 0.1, T + 0.5, M.granite);
+  }
+  addObs({x:-21, z:(zb + zt) / 2, a:-Math.PI / 2, hw:3, pts:[[-(zt - zb) / 2, CURB], [(zt - zb) / 2, T]], mat:M.conc});   // a bank up beside it
+  for (const [a, b] of [[-18, -15], [3, 13]]) addRail(a + 0.1, T, 36.03, b - 0.1, T, 36.03, false);   // drop-off edges
+  for (const x of [-24.97, 12.97]) addRail(x, T, 36.2, x, T, 49.8, false);
+  // on top: trees, lamps, benches and a long flat rail across the lawn
+  for (let x = -21; x < 11; x += 6.5){ tree(x, 38.6, T); tree(x + 3, 48, T); }
+  for (const x of [-23, -6, 11]) lamp(x, 43, T, 4.5);
+  for (const x of [-18, -2, 6]) ledge(x, x + 3, 39.6, 40.2, T - 0.1, T + 0.45, M.granite);
+  addRail(-17, T + 0.5, 44, 5, T + 0.5, 44, true, M.steel);
+  box(-29, 17, CURB, CURB + 1.2, 49.8, 50, M.railing, {su:1 / 1.2, sv:1 / 1.2});   // the iron fence at the back
+  box(-25, 13, T, T + 1.1, 49.8, 50, M.railing, {su:1 / 1.2, sv:1 / 1.2});
+  // down below: a row of trees and benches along the street
+  for (let x = -26; x < 16; x += 6) if (x < -16 || x > 4) tree(x, 28.4);
+  for (const x of [-25, -20, 6.5, 11]) ledge(x, x + 2.6, 30.4, 31, 0, CURB + 0.45, M.granite);
+  for (let i = 0; i < 6; i++) addPerson(rnd(-22, 9), T, rnd(41, 47), N.group);
+  for (let i = 0; i < 3; i++) addPerson(rnd(-26, 14), CURB, rnd(26.5, 31.5), N.group);
+}
+
+/* --- east of the plaza: a tower on a granite plaza, up a seven-stair with hubbas --- */
+{
+  const P0 = 39, P1 = 48, Q0 = -28, Q1 = 8, T = 1.6;
+  box(P0, P1, 0, T, Q0, Q1, M.granite, {solid:true, su:1 / 3, cast:true});
+  const x0 = 35.5, x1 = P0, zc = -8, half = 6, n = 7;
+  const yAt = x => CURB + (T - CURB) * (x - x0) / (x1 - x0);
+  addObs({x:(x0 + x1) / 2, z:zc, a:0, hw:half, pts:[[-(x1 - x0) / 2, CURB], [(x1 - x0) / 2, T]]});
+  for (let i = 0; i < n; i++){
+    const xa = x0 + (x1 - x0) * i / n, xb = x0 + (x1 - x0) * (i + 1) / n + 0.001;
+    box(xa, xb, 0, CURB + (T - CURB) * (i + 0.5) / n, zc - half, zc + half, M.stair, {cast:true});
+  }
+  for (const z of [zc - half + 0.25, zc, zc + half - 0.25]) addRail(x0 + 0.25, yAt(x0 + 0.25) + 0.85, z, x1 - 0.05, T + 0.85, z, true, M.steel);
+  for (const [w0, w1] of [[zc - half - 1, zc - half], [zc + half, zc + half + 1]]){
+    addObs({x:(x0 + x1) / 2, z:(w0 + w1) / 2, a:0, hw:0.5, pts:[[-(x1 - x0) / 2, CURB + 0.5], [(x1 - x0) / 2, T + 0.5]], mat:M.granite});
+    for (const z of [w0 + 0.04, w1 - 0.04]) addRail(x0 + 0.05, CURB + 0.5, z, x1, T + 0.5, z, false);
+    ledge(x1, x1 + 4, w0, w1, T - 0.1, T + 0.5, M.granite);
+  }
+  // the plaza's open edges: grind them, or drop off
+  for (const [a, b] of [[Q0, zc - half - 1], [zc + half + 1, Q1]]) addRail(P0 + 0.03, T, a + 0.1, P0 + 0.03, T, b - 0.1, false);
+  addRail(P0 + 0.1, T, Q0 + 0.03, P1 - 0.1, T, Q0 + 0.03, false);
+  addRail(P0 + 0.1, T, Q1 - 0.03, 40.4, T, Q1 - 0.03, false); addRail(46.6, T, Q1 - 0.03, P1 - 0.1, T, Q1 - 0.03, false);
+  addObs({x:43.5, z:Q1 + 1.75, a:Math.PI / 2, hw:3, pts:[[-1.75, CURB], [1.75, T]], mat:M.conc});   // bank down to the street
+  // benches, a manual pad, a red arch sculpture, flagpoles, the lit lobby
+  ledge(42, 46, -25, -24.4, T - 0.1, T + 0.45, M.granite); ledge(42, 46, 3.4, 4, T - 0.1, T + 0.45, M.granite);
+  ledge(42, 45.5, -4.5, -1.5, T - 0.1, T + 0.3, M.granite);
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.32, 12, 32, Math.PI), M.red); arch.position.set(44, T, -17); arch.castShadow = true; put(arch);
+  for (const x of [41.8, 46.2]) solid(x - 0.35, x + 0.35, -17.35, -16.65, T + 1.2);
+  for (const [z, c] of [[-26.5, 0x3d6bd9], [-25, 0xf4f0e8], [-23.5, 0xc8102e]]){
+    const p = cyl(0.05, 9, M.steel); p.position.set(39.6, T + 4.5, z); put(p);
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1), lam(c, {side:THREE.DoubleSide, emissive:c, emissiveIntensity:0.15})); f.position.set(39.6, T + 8.3, z + 0.8); f.rotation.y = Math.PI / 2; put(f);
+  }
+  const lob = new THREE.Mesh(new THREE.PlaneGeometry(Q1 - Q0 - 4, 5), glow(0xffffff, {map:lobbyT})); lob.position.set(47.94, T + 2.5, (Q0 + Q1) / 2); lob.rotation.y = -Math.PI / 2; put(lob);
+  POOLS.push({x:45, y:T, z:-10, r:12, c:0xffd0a0});
+  for (let i = 0; i < 6; i++) addPerson(rnd(41, 47), T, rnd(-26, 6), N.group);
+}
+
+/* --- street furniture --- */
+function hydrant(x, z){
+  const b = cyl(0.13, 0.55, M.red); b.position.set(x, CURB + 0.28, z); put(b);
+  const c = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 6, 0, TAU, 0, Math.PI / 2), M.red); c.position.set(x, CURB + 0.55, z); put(c);
+  const s = cyl(0.06, 0.42, M.red); s.rotation.z = Math.PI / 2; s.position.set(x, CURB + 0.4, z); put(s);
+  solid(x - 0.18, x + 0.18, z - 0.18, z + 0.18, CURB + 0.7);
+}
+function bin(x, z){
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.27, 0.9, 12, 1, true), lam(0x2f5a3a, {map:railT, alphaTest:0.5, side:THREE.DoubleSide})); b.position.set(x, CURB + 0.45, z); put(b);
+  solid(x - 0.3, x + 0.3, z - 0.3, z + 0.3, CURB + 0.9);
+}
+function newsbox(x, z, c){
+  box(x - 0.24, x + 0.24, CURB, CURB + 1.05, z - 0.22, z + 0.22, lam(c), {solid:true, cast:true});
+  box(x - 0.18, x + 0.18, CURB + 0.6, CURB + 0.9, z + 0.22, z + 0.23, M.cool);
+}
+function mailbox(x, z){
+  box(x - 0.28, x + 0.28, CURB + 0.2, CURB + 1.05, z - 0.25, z + 0.25, M.blue, {solid:true, cast:true});
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.5, 12), M.blue); t.rotation.z = Math.PI / 2; t.position.set(x, CURB + 1.05, z); put(t);
+}
+for (const [x, z] of [[-43.6, -49.6], [-28.4, -31.4], [16.4, -31.4], [31.6, -49.6], [-43.6, 28.6], [31.6, 28.6], [16.4, 11.6], [-28.4, 28.6]]) hydrant(x, z);
+for (const [x, z] of [[-44, -53], [-28.3, 9], [16.3, -29], [32, -53], [-44, 31.5], [32.2, 31.5], [-27.6, 27.2], [32.2, -32]]) bin(x, z);
+newsbox(-27.6, 13.4, 0x2a5ab0); newsbox(-27, 13.4, 0xd8a020); newsbox(-26.4, 13.4, 0xc8202c); newsbox(33.5, -33.4, 0x2a8a50); newsbox(34.1, -33.4, 0x2a5ab0);
+mailbox(-44, -31.6); mailbox(31.9, 12.6);
+for (const x of [33.3]) for (const z of [-30, -22, 4, 10.5]) tree(x, z);
+for (const z of [-60, -54, 34, 42]) tree(-44.2, z);
+
+// a green sidewalk shed (scaffolding) along the west towers
+{
+  const x0 = -47, x1 = -43.4, z0 = -28, z1 = 6;
+  box(x0, x1, 3.2, 3.45, z0, z1, M.shedTop, {cast:true});
+  box(x1 - 0.06, x1, 2.9, 3.75, z0, z1, M.shed);
+  for (let z = z0 + 0.2; z < z1; z += 2.6) for (const x of [x0 + 0.2, x1 - 0.2]){
+    const p = cyl(0.06, 3.2 - CURB, M.shed); p.position.set(x, CURB + (3.2 - CURB) / 2, z); put(p);
+    solid(x - 0.08, x + 0.08, z - 0.08, z + 0.08, 3.2);
+  }
+  for (let z = z0 + 1.5; z < z1; z += 5){ box(x0 + 1, x1 - 1, 3.16, 3.2, z, z + 0.8, M.cool); POOLS.push({x:(x0 + x1) / 2, y:CURB, z:z + 0.4, r:4, c:0xdfeaff}); }
+}
+// subway entrances, closed for the night: green railings all round (grind the long sides), globe lamps
+function subway(x0, x1, z0, z1){
+  const H = CURB + 1.0;
+  flat(x0 + 0.08, x1 - 0.08, z0 + 0.08, z1 - 0.08, CURB + 0.005, M.hole);
+  const long = z1 - z0 > x1 - x0;
+  for (const [a0, a1, b0, b1] of [[x0, x0 + 0.06, z0, z1], [x1 - 0.06, x1, z0, z1], [x0, x1, z0, z0 + 0.06], [x0, x1, z1 - 0.06, z1]]){
+    box(a0, a1, CURB, H, b0, b1, M.railing, {su:1 / 1, sv:1 / 0.85});
+  }
+  solid(x0, x1, z0, z1, H);
+  if (long) for (const x of [x0 + 0.03, x1 - 0.03]) addRail(x, H, z0 + 0.05, x, H, z1 - 0.05, false);
+  else for (const z of [z0 + 0.03, z1 - 0.03]) addRail(x0 + 0.05, H, z, x1 - 0.05, H, z, false);
+  for (const [x, z] of long ? [[x0, z1], [x1, z1]] : [[x1, z0], [x1, z1]]){
+    const p = cyl(0.05, 2.1, M.shed); p.position.set(x, CURB + 1.05, z); put(p);
+    const g = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), M.green); g.position.set(x, CURB + 2.25, z); put(g);
+  }
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.4), glow(0xffffff, {map:AD.subway, side:THREE.DoubleSide}));
+  if (long){ s.position.set((x0 + x1) / 2, CURB + 1.5, z1); } else { s.position.set(x1, CURB + 1.5, (z0 + z1) / 2); s.rotation.y = Math.PI / 2; }
+  put(s);
+  POOLS.push({x:(x0 + x1) / 2, y:CURB, z:(z0 + z1) / 2, r:4, c:0x7dffc0});
+}
+subway(-27.6, -25.8, -24, -19); subway(31.8, 33.6, 34, 39); subway(-46.6, -44.8, 33, 38);
+
+/* --- parked taxis (and a few black cars) along the curbs --- */
+function car(x, z, along, kind){
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = along ? 0 : Math.PI / 2; put(g);
+  const paint = kind === 'taxi' ? M.taxi : kind === 'black' ? M.black : M.silver;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.62, 4.6), paint); body.position.y = 0.62; body.castShadow = true; g.add(body);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.5, 2.3), M.glass); cab.position.set(0, 1.18, -0.15); g.add(cab);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 2.0), paint); roof.position.set(0, 1.46, -0.15); g.add(roof);
+  if (kind === 'taxi'){
+    const sg = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.26), [M.lampHead, M.lampHead, M.lampHead, M.lampHead, glow(0xffffff, {map:AD.taxi}), glow(0xffffff, {map:AD.taxi})]); sg.position.set(0, 1.6, -0.15); g.add(sg);
+    const st = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.08, 2.4), M.black); st.position.set(0, 0.66, 0); g.add(st);
+  }
+  for (const sx of [-0.82, 0.82]) for (const sz of [-1.45, 1.45]){ const w = cyl(0.34, 0.24, M.tire); w.rotation.z = Math.PI / 2; w.position.set(sx, 0.34, sz); g.add(w); }
+  for (const sx of [-0.6, 0.6]){
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.04), M.head); h.position.set(sx, 0.72, 2.31); g.add(h);
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.04), M.tail); t.position.set(sx, 0.75, -2.31); g.add(t);
+  }
+  const hx = along ? 0.95 : 2.35, hz = along ? 2.35 : 0.95;
+  solid(x - hx, x + hx, z - hz, z + hz, 1.5);
+}
+const kind = () => Math.random() < 0.72 ? 'taxi' : Math.random() < 0.6 ? 'black' : 'silver';
+for (const [x, z] of [[-41.9, -24], [-41.9, -13], [-30.1, -18], [-30.1, 4], [-30.1, -58], [-41.9, 36], [-38.5, 33], [-34.5, -55],
+  [18.1, -20], [18.1, -60], [29.9, -6], [29.9, 36], [29.9, 44], [21.5, 6], [25.5, -58]]) car(x, z, true, kind());
+for (const [x, z] of [[-15, -43.9], [5, -43.9], [-50, -43.9], [-20, -36.1], [45, -36.1], [-10, 16.1], [50, 16.1], [-50, 23.9], [8, 23.9], [-4, 20.5]]) car(x, z, false, kind());
+
+/* --- steam: striped stacks in the avenues, and manholes that breathe --- */
+function vent(x, z, stack){
+  let y = 0.05;
+  if (stack){
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 2.2, 14), M.band); s.position.set(x, 1.1, z); put(s);
+    bandT.repeat.set(3, 3); solid(x - 0.45, x + 0.45, z - 0.45, z + 0.45, 2.2); y = 2.25;
+  } else {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(0.4, 16).rotateX(-Math.PI / 2), M.post); m.position.set(x, 0.014, z); put(m);
+  }
+  const ps = [];
+  for (let i = 0; i < 9; i++){ const s = new THREE.Sprite(new THREE.SpriteMaterial({map:steamT, transparent:true, depthWrite:false, opacity:0, color:0xd8dcf0})); put(s); ps.push({s, t:i / 9}); }
+  VENTS.push({x, z, y, ps, big:!!stack});
+}
+vent(-36, -15, true); vent(24, -25, true); vent(-6, -40); vent(0, 20); vent(-36, 38); vent(24, 40); vent(45, 20); vent(-36, -62);
+
+/* --- street lamps, traffic lights --- */
+for (let z = Z0 + 4; z < Z1; z += 13) if (!STR.some(([a, b]) => z > a - 2 && z < b + 2)) for (const x of [-43.5, -28.5, 16.5, 31.5]) if (!(x === -43.5 && z > -29 && z < 7)) lamp(x, z);
+for (let x = X0 + 4; x < X1; x += 13) if (!AVE.some(([a, b]) => x > a - 2 && x < b + 2)) for (const z of [-45.5, -34.5, 14.5, 25.5]) lamp(x, z);
+function signal(x, z, ry){
+  const pole = cyl(0.1, 5.8, M.post); pole.position.set(x, CURB + 2.9, z); put(pole);
+  const arm = new THREE.Group(); arm.position.set(x, CURB + 5.5, z); arm.rotation.y = ry; put(arm);
+  const bar = cyl(0.07, 5, M.post); bar.rotation.z = Math.PI / 2; bar.position.x = 2.5; arm.add(bar);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 1.1, 0.34), M.signal); head.position.set(4.6, -0.6, 0); arm.add(head);
+  for (const [k, m] of [[0.33, lam(0x3a1010)], [0, lam(0x332d10)], [-0.33, M.green]]){ const l = new THREE.Mesh(new THREE.CircleGeometry(0.12, 12), m); l.position.set(4.6, -0.6 + k, 0.18); arm.add(l); }
+  const w = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.2), M.walk); w.position.set(x, CURB + 2.7, z); put(w);
+}
+for (const [a, b] of AVE) for (const [s0, s1] of STR){
+  signal(a - 0.6, s0 - 0.6, 0); signal(b + 0.6, s1 + 0.6, Math.PI); signal(b + 0.6, s0 - 0.6, -Math.PI / 2); signal(a - 0.6, s1 + 0.6, Math.PI / 2);
+}
+
+/* --- barricades where the open streets leave the map --- */
+function barricade(x0, x1, z0, z1){
+  box(x0, x1, 0.55, 0.95, z0, z1, M.barrier, {su:0.5, sv:2.5});
+  const ns = x1 - x0 > z1 - z0, len = ns ? x1 - x0 : z1 - z0;
+  for (let t = 0.3; t < len; t += 2.4){
+    const x = ns ? x0 + t : (x0 + x1) / 2, z = ns ? (z0 + z1) / 2 : z0 + t;
+    box(x - 0.05, x + 0.05, 0, 0.6, z - 0.05, z + 0.05, M.post);
+    BLINK.push({x, y:1.05, z, low:true});
+  }
+}
+for (const [a, b] of [[-47, -25], [13, 35]]){ barricade(a, b, Z0 + 0.05, Z0 + 0.3); barricade(a, b, Z1 - 0.3, Z1 - 0.05); }
+for (const [a, b] of [[-49, -31], [11, 29]]){ barricade(X0 + 0.05, X0 + 0.3, a, b); barricade(X1 - 0.3, X1 - 0.05, a, b); }
+
+/* --- people out for the night --- */
+for (let i = 0; i < 14; i++) addPerson(rnd(-26, 14), CURB, rnd(-32, 12), N.group);
+for (let i = 0; i < 6; i++) addPerson(pick([-45.5, -26.5, 18.5, 33.5]) + rnd(-1, 1), CURB, rnd(-66, -50), N.group);
+for (let i = 0; i < 6; i++) addPerson(rnd(-58, 58), CURB, pick([-47.5, -33, 13, 27]) + rnd(-0.8, 0.8), N.group);
+for (let i = 0; i < 4; i++) addPerson(rnd(32, 35), CURB, rnd(-30, 12), N.group);
+
+/* --- draw the collected lamps, trees, glows and beacons --- */
+inst(new THREE.CylinderGeometry(0.08, 0.11, 1, 8).translate(0, 0.5, 0), M.post, LAMPS, (o, l) => { o.position.set(l.x, l.y, l.z); o.scale.set(1, l.h, 1); });
+inst(new THREE.SphereGeometry(0.28, 12, 8), M.lampHead, LAMPS, (o, l) => o.position.set(l.x, l.y + l.h + 0.15, l.z));
+inst(new THREE.CylinderGeometry(0.14, 0.18, 2.8, 8).translate(0, 1.4, 0), M.trunk, TRUNKS, (o, t) => o.position.set(t.x, t.y, t.z));
+inst(new THREE.IcosahedronGeometry(1, 1), M.leaf, LEAVES, (o, b) => { o.position.set(b.x, b.y, b.z); o.scale.setScalar(b.r); });
+inst(plane, M.pool, POOLS, (o, p) => { o.position.set(p.x, p.y + 0.02, p.z); o.scale.set(p.r, 1, p.r); });
+const blinkM = glow(0xff2a1a), blinkLow = glow(0xff6a10);
+inst(new THREE.SphereGeometry(0.5, 8, 6), blinkM, BLINK.filter(b => !b.low), (o, b) => o.position.set(b.x, b.y, b.z));
+inst(new THREE.SphereGeometry(0.07, 8, 6), blinkLow, BLINK.filter(b => b.low), (o, b) => o.position.set(b.x, b.y, b.z));
+
+/* --- a few real lights where it matters; everything else glows on its own --- */
+for (const [x, y, z, c, i, d] of [[-6, 3, -1, 0xff3048, 1.4, 18], [-6, 14, -40, 0xff6fb0, 1.3, 42], [-40, 12, -10, 0x56d8ff, 1.1, 36], [7, 3, 4, 0x6ad8ff, 1.0, 14],
+  [43, 6, -10, 0xffd6a0, 1.2, 30], [-6, 6, 42, 0xfff0d0, 1.0, 30], [24, 7, 20, 0xffc890, 1.0, 36], [24, 7, -40, 0xffc890, 1.0, 36]]){
+  const L = new THREE.PointLight(c, i, d, 1.4); L.position.set(x, y, z); put(L);
+}
+const near = new THREE.PointLight(0xffe8d0, 0.55, 9, 1.5); put(near);
+
+N.light = {sky, fog:new THREE.Fog(0x1b1630, 40, 250), hemi:[0x7080c8, 0x2a1e30, 0.65],
+  sun:[0xb0c0ff, 0.45, [-18, 34, -12]], follow:true, shadow:{left:-30, right:30, top:30, bottom:-30, near:1, far:90}, exposure:1.15};
+let tt = 0, cyc = 0;
+N.update = dt => {
+  tt += dt;
+  tickerT.offset.x += dt * 0.05;
+  fwaterT.offset.y -= dt * 0.08;
+  N.jet.scale.set(1, 0.92 + Math.sin(tt * 7) * 0.08, 1);
+  N.cube.rotation.y += dt * 0.25;
+  blinkM.color.setScalar(Math.sin(tt * 2.2) > 0.55 ? 1 : 0.1);
+  blinkLow.color.setScalar(Math.sin(tt * 5) > 0 ? 1 : 0.15);
+  cyc += dt;
+  if (cyc > 3.2){ cyc = 0; for (const c of CYCLE){ c.i = (c.i + 1) % c.list.length; c.m.map = c.list[c.i]; } }
+  for (const v of VENTS){
+    if (Math.abs(v.x - P.pos.x) > 90 || Math.abs(v.z - P.pos.z) > 90) continue;
+    for (const p of v.ps){
+      p.t += dt / (v.big ? 3.2 : 2.6); if (p.t > 1) p.t -= 1;
+      const k = p.t;
+      p.s.position.set(v.x + Math.sin(tt * 0.7 + p.t * 9) * k * 0.5 + k * 1.2, v.y + k * (v.big ? 6 : 3.6), v.z + Math.cos(tt * 0.6 + p.t * 7) * k * 0.4);
+      p.s.scale.setScalar(0.6 + k * (v.big ? 4 : 2.6));
+      p.s.material.opacity = Math.sin(k * Math.PI) * (v.big ? 0.5 : 0.3);
+    }
+  }
+  near.position.set(P.pos.x, P.pos.y + 3, P.pos.z);
+};
+useMap(PARK);
+return N;
 })();
 PARK.light = {sky:parkSky, fog:scene.fog, hemi:[0xa8b6ff, 0x6b4636, 0.75], sun:[0xffd0a0, 1.7, [-34, 30, -26]], follow:false,
   shadow:{left:-48, right:48, top:48, bottom:-48, near:1, far:140}, exposure:1.05};
@@ -2311,7 +2972,15 @@ function pose(S, Q, dt){
   if (Q.trick){
     p = Q.trickP; const e = 1 - Math.pow(1 - p, 2.2);
     rx = (Q.trick.x || 0) * TAU * e; ry = (Q.trick.y || 0) * TAU * e; rz = (Q.trick.z || 0) * TAU * e;
+    if (Q.trick.tilt) rx += Q.trick.tilt * Math.sin(Math.PI * Math.min(1, p * 1.25));
     flipLift = Math.sin(Math.PI * p);
+  }
+  // hippie jump: the board stays down on the ground under you, and comes back to your feet as you come down
+  let hippieDrop = 0;
+  if (Q.trick && Q.trick.hippie && Q.state === 'air'){
+    const gap = Math.max(0, Q.pos.y - heightAt(Q.pos.x, Q.pos.z));
+    hippieDrop = gap * (p < 0.8 ? 1 : Math.max(0, (1 - p) / 0.2));
+    flipLift = 0;
   }
   anim.pitch *= Math.exp(-7 * dt);
   const liftT = Q.grabbing ? 0.34 : flipLift * 0.14 + (Q.state === 'air' ? 0.04 : 0);
@@ -2343,7 +3012,7 @@ function pose(S, Q, dt){
   const phiB = phi + anim.pitch + anim.gPitch;   // total board pitch, so feet stay glued to the deck
   if (Q.state !== 'bail'){
     riderG.rotation.set(0, 0, -anim.lean);
-    boardPivot.position.set(0, 0.07 + anim.boardLift + mLift, 0);
+    boardPivot.position.set(0, 0.07 + anim.boardLift + mLift - hippieDrop, 0);
     qa.setFromAxisAngle(Y, ry); qb.setFromAxisAngle(AX_X, rx + phiB); qc.setFromAxisAngle(AX_Z, rz);
     boardPivot.quaternion.copy(qa).multiply(qb).multiply(qc);
   }
@@ -2361,7 +3030,7 @@ function pose(S, Q, dt){
   const drag = pu < 1 ? clamp((pu - 0.08) / 0.4, 0, 1) * (1 - clamp((pu - 0.7) / 0.3, 0, 1)) : 0;
   // flip tricks: the foot flicks off the edge early in the trick, then both feet tuck
   let fl = 0;
-  if (Q.trick){ const q = Q.trickP / 0.4; fl = q < 1 ? Math.sin(Math.PI * q) : 0; }
+  if (Q.trick){ const q = Q.trickP / (Q.trick.hippie ? 1 : 0.4); fl = q < 1 ? Math.sin(Math.PI * q) : 0; }
   const tf = (Q.trick && Q.trick.ff) || ZERO3, tb = (Q.trick && Q.trick.bf) || ZERO3;
   // stance: front foot angled toward the nose over the front bolts, back foot across the tail
   const FOOT = [{x:0.04, z:0.18, yaw:-0.38}, {x:0.0, z:-0.21, yaw:0.1}];
